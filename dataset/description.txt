@@ -1,0 +1,360 @@
+001. Арысь - поле|http://hyaenidae.narod.ru/story1/046.html
+002. Байка про тетерева|http://hyaenidae.narod.ru/story1/027.html
+003. Бобовое зернышко|http://hyaenidae.narod.ru/story1/030.html
+004. Волк и коза|http://hyaenidae.narod.ru/story1/023.html
+005. Ворона и рак|http://hyaenidae.narod.ru/story1/029.html
+006. Гуси - лебеди|http://hyaenidae.narod.ru/story1/041.html
+007. Дочь и падчерица|http://hyaenidae.narod.ru/story1/045.html
+008. Думы|http://hyaenidae.narod.ru/story1/009.html
+009. Журавль и цапля|http://hyaenidae.narod.ru/story1/028.html
+010. Зайцы и лягушки|http://hyaenidae.narod.ru/story1/026.html
+011. Заяц - хваста|http://hyaenidae.narod.ru/story1/025.html
+012. Звери в яме|http://hyaenidae.narod.ru/story1/017.html
+013. Зимовье зверей|http://hyaenidae.narod.ru/story1/019.html
+014. Как лиса училась летать|http://hyaenidae.narod.ru/story1/005.html
+015. Коза - дереза|http://hyaenidae.narod.ru/story1/015.html
+016. Колобок|http://hyaenidae.narod.ru/story1/032.html
+017. Кот и лиса|http://hyaenidae.narod.ru/story1/013.html
+018. Кот - серый лоб, козел да баран|http://hyaenidae.narod.ru/story1/020.html
+019. Кочеток и курочка|http://hyaenidae.narod.ru/story1/031.html
+020. Кузьма Скоробогатый|http://hyaenidae.narod.ru/story1/040.html
+021. Лев, щука и человек|http://hyaenidae.narod.ru/story1/049.html
+022. Лиса и дрозд|http://hyaenidae.narod.ru/story1/011.html
+023. Лиса и журавль|http://hyaenidae.narod.ru/story1/003.html
+024. Лиса и заяц|http://hyaenidae.narod.ru/story1/002.html
+025. Лиса и козел|http://hyaenidae.narod.ru/story1/014.html
+026. Лиса и кувшин|http://hyaenidae.narod.ru/story1/006.html
+027. Лиса и рак|http://hyaenidae.narod.ru/story1/007.html
+028. Лиса и тетерев|http://hyaenidae.narod.ru/story1/010.html
+029. Лиса - исповедница|http://hyaenidae.narod.ru/story1/004.html
+030. Лисичка - сестричка и волк|http://hyaenidae.narod.ru/story1/001.html
+031. Мальчик с пальчик|http://hyaenidae.narod.ru/story1/048.html
+032. Маша и медведь|http://hyaenidae.narod.ru/story1/038.html
+033. Медведь и лиса|http://hyaenidae.narod.ru/story1/012.html
+034. Медведь и собака|http://hyaenidae.narod.ru/story1/024.html
+035. Медведь - липовая нога|http://hyaenidae.narod.ru/story1/037.html
+036. Морозко|http://hyaenidae.narod.ru/story1/043.html
+037. Мужик и медведь|http://hyaenidae.narod.ru/story1/036.html
+038. Нет козы с орехами|http://hyaenidae.narod.ru/story1/016.html
+039. Овца, лиса и волк|http://hyaenidae.narod.ru/story1/022.html
+040. Петушок - золотой гребешок|http://hyaenidae.narod.ru/story1/008.html
+041. Петушок - золотой гребешок и жерновцы|http://hyaenidae.narod.ru/story1/050.html
+042. Пузырь, соломинка и лапоть|http://hyaenidae.narod.ru/story1/034.html
+043. Репка|http://hyaenidae.narod.ru/story1/033.html
+044. Сестрица Аленушка и братец Иванушка|http://hyaenidae.narod.ru/story1/044.html
+045. Снегурушка и лиса|http://hyaenidae.narod.ru/story1/039.html
+046. Старик и волк|http://hyaenidae.narod.ru/story1/035.html
+047. Терем мышки|http://hyaenidae.narod.ru/story1/018.html
+048. Терёшечка|http://hyaenidae.narod.ru/story1/042.html
+049. Хаврошечка|http://hyaenidae.narod.ru/story1/047.html
+050. Хитрый козел|http://hyaenidae.narod.ru/story1/021.html
+051. Беззаботная жена|http://hyaenidae.narod.ru/story2/066.html
+052. Белая уточка|http://hyaenidae.narod.ru/story2/081.html
+053. Беспамятный зять|http://hyaenidae.narod.ru/story2/080.html
+054. Брат и сестра|http://hyaenidae.narod.ru/story2/067.html
+055. Война грибов|http://hyaenidae.narod.ru/story2/051.html
+056. Глиняный парень|http://hyaenidae.narod.ru/story2/056.html
+057. Глупый жених|http://hyaenidae.narod.ru/story2/089.html
+058. Горшок|http://hyaenidae.narod.ru/story2/068.html
+059. Девушка в колодце|http://hyaenidae.narod.ru/story2/063.html
+060. Жена - спорщица|http://hyaenidae.narod.ru/story2/078.html
+061. За дурной головой - ногам работа!|http://hyaenidae.narod.ru/story2/075.html
+062. Завещание|http://hyaenidae.narod.ru/story2/077.html
+063. Заяц|http://hyaenidae.narod.ru/story2/076.html
+064. Иван-царевич и серый волк|http://hyaenidae.narod.ru/story2/065.html
+065. Иванушка и домовой|http://hyaenidae.narod.ru/story2/074.html
+066. Иванушко - дурачок|http://hyaenidae.narod.ru/story2/073.html
+067. Как дела в Ростове?|http://hyaenidae.narod.ru/story2/090.html
+068. Как Иван-дурак дверь стерег|http://hyaenidae.narod.ru/story2/098.html
+069. Как старуха нашла лапоть|http://hyaenidae.narod.ru/story2/057.html
+070. Кашица из топора|http://hyaenidae.narod.ru/story2/093.html
+071. Козел|http://hyaenidae.narod.ru/story2/064.html
+072. Кривая уточка|http://hyaenidae.narod.ru/story2/061.html
+073. Лень да Отеть|http://hyaenidae.narod.ru/story2/087.html
+074. Лутонюшка|http://hyaenidae.narod.ru/story2/088.html
+075. Мизгирь|http://hyaenidae.narod.ru/story2/052.html
+076. Морской царь и Василиса Премудрая|http://hyaenidae.narod.ru/story2/091.html
+077. На суде|http://hyaenidae.narod.ru/story2/070.html
+078. Неумелая жена|http://hyaenidae.narod.ru/story2/079.html
+079. О Ваське-Муське|http://hyaenidae.narod.ru/story2/055.html
+080. О щуке зубастой|http://hyaenidae.narod.ru/story2/053.html
+081. Поди туда - не знаю куда, принеси то - не знаю что|http://hyaenidae.narod.ru/story2/084.html
+082. Привычки|http://hyaenidae.narod.ru/story2/086.html
+083. Притворная болезнь|http://hyaenidae.narod.ru/story2/083.html
+084. Разговор|http://hyaenidae.narod.ru/story2/100.html
+085. Рифмы|http://hyaenidae.narod.ru/story2/085.html
+086. Сказка о Ерше Ершовиче, сыне Щетинникове|http://hyaenidae.narod.ru/story2/054.html
+087. Сказка о молодильных яблоках и живой воде|http://hyaenidae.narod.ru/story2/092.html
+088. Скатерть, баранчик и сума|http://hyaenidae.narod.ru/story2/059.html
+089. Солдат и пельмени|http://hyaenidae.narod.ru/story2/099.html
+090. Солдат и черт|http://hyaenidae.narod.ru/story2/096.html
+091. Солдатская школа|http://hyaenidae.narod.ru/story2/097.html
+092. Солнце, Месяц и Ворон Воронович|http://hyaenidae.narod.ru/story2/082.html
+093. Финист - ясный сокол|http://hyaenidae.narod.ru/story2/071.html
+094. Хлыст и Подлыгало|http://hyaenidae.narod.ru/story2/095.html
+095. Хорошо, да худо|http://hyaenidae.narod.ru/story2/094.html
+096. Царевна - лягушка|http://hyaenidae.narod.ru/story2/072.html
+097. Чернушка|http://hyaenidae.narod.ru/story2/062.html
+098. Чивы, чивы, чивычок...|http://hyaenidae.narod.ru/story2/060.html
+099. Шемякин суд|http://hyaenidae.narod.ru/story2/069.html
+100. Яичко|http://hyaenidae.narod.ru/story2/058.html
+101. Барин и мужик|http://hyaenidae.narod.ru/story3/140.html
+102. Барин и плотник|http://hyaenidae.narod.ru/story3/138.html
+103. Барин и собака|http://hyaenidae.narod.ru/story3/139.html
+104. Барин - кузнец|http://hyaenidae.narod.ru/story3/136.html
+105. Беззаботный монастырь|http://hyaenidae.narod.ru/story3/116.html
+106. Булат - молодец|http://hyaenidae.narod.ru/story3/141.html
+107. Вещий мальчик|http://hyaenidae.narod.ru/story3/155.html
+108. Вещий сон|http://hyaenidae.narod.ru/story3/152.html
+109. Во лбу солнце, на затылке месяц, по бокам звезды|http://hyaenidae.narod.ru/story3/143.html
+110. Волшебная дудочка|http://hyaenidae.narod.ru/story3/132.html
+111. Волшебное кольцо|http://hyaenidae.narod.ru/story3/121.html
+112. Глупая барыня|http://hyaenidae.narod.ru/story3/146.html
+113. Горе|http://hyaenidae.narod.ru/story3/115.html
+114. Горшеня|http://hyaenidae.narod.ru/story3/118.html
+115. Два Ивана - солдатских сына|http://hyaenidae.narod.ru/story3/160.html
+116. Два Мороза|http://hyaenidae.narod.ru/story3/156.html
+117. Добрый поп|http://hyaenidae.narod.ru/story3/119.html
+118. Дочь - семилетка|http://hyaenidae.narod.ru/story3/172.html
+119. Дурак и береза|http://hyaenidae.narod.ru/story3/171.html
+120. Елена Премудрая|http://hyaenidae.narod.ru/story3/162.html
+121. Заколдованная королевна|http://hyaenidae.narod.ru/story3/150.html
+122. Иван Бесталанный и Елена Премудрая|http://hyaenidae.narod.ru/story3/111.html
+123. Иван - крестьянский сын и чудо-юдо|http://hyaenidae.narod.ru/story3/131.html
+124. Иван-царевич и Белый Полянин|http://hyaenidae.narod.ru/story3/133.html
+125. Как барин овцу купил|http://hyaenidae.narod.ru/story3/135.html
+126. Как дьякона медом угощали|http://hyaenidae.narod.ru/story3/120.html
+127. Как мужик гусей делил|http://hyaenidae.narod.ru/story3/144.html
+128. Как поп работницу нанимал|http://hyaenidae.narod.ru/story3/114.html
+129. Как старик домовничал|http://hyaenidae.narod.ru/story3/107.html
+130. Клад|http://hyaenidae.narod.ru/story3/127.html
+131. Королевич и его дядька|http://hyaenidae.narod.ru/story3/134.html
+132. Лихо одноглазое|http://hyaenidae.narod.ru/story3/126.html
+133. Марья Моревна|http://hyaenidae.narod.ru/story3/101.html
+134. Мена|http://hyaenidae.narod.ru/story3/157.html
+135. Мудрые ответы|http://hyaenidae.narod.ru/story3/166.html
+136. Мужик и барин|http://hyaenidae.narod.ru/story3/137.html
+137. Мужик и поп|http://hyaenidae.narod.ru/story3/103.html
+138. Наговорная водица|http://hyaenidae.narod.ru/story3/110.html
+139. Неумойка|http://hyaenidae.narod.ru/story3/165.html
+140. Никита Кожемяка|http://hyaenidae.narod.ru/story3/122.html
+141. Ночь на Ивана Купалу|http://hyaenidae.narod.ru/story3/125.html
+142. Окаменелое царство|http://hyaenidae.narod.ru/story3/142.html
+143. Петр 1 и мужик|http://hyaenidae.narod.ru/story3/117.html
+144. Петухан Куриханыч|http://hyaenidae.narod.ru/story3/104.html
+145. По щучьему веленью|http://hyaenidae.narod.ru/story3/164.html
+146. Поп и батрак|http://hyaenidae.narod.ru/story3/130.html
+147. Похороны козла|http://hyaenidae.narod.ru/story3/124.html
+148. Про глупого змея и умного солдата|http://hyaenidae.narod.ru/story3/170.html
+149. Про нужду|http://hyaenidae.narod.ru/story3/151.html
+150. Про одного солдата|http://hyaenidae.narod.ru/story3/154.html
+151. Птичий язык|http://hyaenidae.narod.ru/story3/153.html
+152. Семь Симеонов|http://hyaenidae.narod.ru/story3/161.html
+153. Сердитая барыня|http://hyaenidae.narod.ru/story3/149.html
+154. Сивка-бурка|http://hyaenidae.narod.ru/story3/102.html
+155. Сказка о богатыре Голе Воянском|http://hyaenidae.narod.ru/story3/169.html
+156. Скорый гонец|http://hyaenidae.narod.ru/story3/145.html
+157. Солдат и смерть|http://hyaenidae.narod.ru/story3/158.html
+158. Солдатская шинель|http://hyaenidae.narod.ru/story3/106.html
+159. Соль|http://hyaenidae.narod.ru/story3/159.html
+160. Три калача и одна баранка|http://hyaenidae.narod.ru/story3/109.html
+161. Умный работник|http://hyaenidae.narod.ru/story3/148.html
+162. Хитрая наука|http://hyaenidae.narod.ru/story3/163.html
+163. Хрустальная гора|http://hyaenidae.narod.ru/story3/112.html
+164. Царевна - змея|http://hyaenidae.narod.ru/story3/147.html
+165. Царевна - отгадчица|http://hyaenidae.narod.ru/story3/167.html
+166. Церковная служба|http://hyaenidae.narod.ru/story3/129.html
+167. Чего на свете не бывает|http://hyaenidae.narod.ru/story3/105.html
+168. Черт - заимодавец|http://hyaenidae.narod.ru/story3/123.html
+169. Черт и мужик|http://hyaenidae.narod.ru/story3/128.html
+170. Что дальше слышно|http://hyaenidae.narod.ru/story3/108.html
+171. Чудесная рубашка|http://hyaenidae.narod.ru/story3/113.html
+172. Шабарша|http://hyaenidae.narod.ru/story3/168.html
+173. Архиерей|http://hyaenidae.narod.ru/story4/233.html
+174. Афонька! Где был-побывал?..|http://hyaenidae.narod.ru/story4/211.html
+175. Баба и два солдата|http://hyaenidae.narod.ru/story4/241.html
+176. Баба-яга|http://hyaenidae.narod.ru/story4/174.html
+177. Бабка и медведь|http://hyaenidae.narod.ru/story4/190.html
+178. Барин и гусак|http://hyaenidae.narod.ru/story4/210.html
+179. Барин и староста|http://hyaenidae.narod.ru/story4/212.html
+180. Барин лает в церкви|http://hyaenidae.narod.ru/story4/213.html
+181. Барин - слуга|http://hyaenidae.narod.ru/story4/214.html
+182. Барские гуси|http://hyaenidae.narod.ru/story4/256.html
+183. Батюшка, отпусти!|http://hyaenidae.narod.ru/story4/201.html
+184. Большой дом из одного кирпичика|http://hyaenidae.narod.ru/story4/249.html
+185. Брито - стрижено|http://hyaenidae.narod.ru/story4/257.html
+186. Брысь, окаянная, брысь!|http://hyaenidae.narod.ru/story4/263.html
+187. Ведьма и Солнцева сестра|http://hyaenidae.narod.ru/story4/178.html
+188. Вещий дуб|http://hyaenidae.narod.ru/story4/259.html
+189. Волк, перепелка и дергун|http://hyaenidae.narod.ru/story4/185.html
+190. Воры и судья|http://hyaenidae.narod.ru/story4/220.html
+191. Где, коза, была?|http://hyaenidae.narod.ru/story4/187.html
+192. Глупый волк|http://hyaenidae.narod.ru/story4/183.html
+193. Глупый мужик|http://hyaenidae.narod.ru/story4/202.html
+194. Государь Сидор Карпович|http://hyaenidae.narod.ru/story4/252.html
+195. Два вора|http://hyaenidae.narod.ru/story4/237.html
+196. Две старухи и архиерей|http://hyaenidae.narod.ru/story4/234.html
+197. Деревянный орел|http://hyaenidae.narod.ru/story4/175.html
+198. Догада|http://hyaenidae.narod.ru/story4/262.html
+199. Докучные сказки|http://hyaenidae.narod.ru/story4/267.html
+200. Дорогой обед|http://hyaenidae.narod.ru/story4/200.html
+201. Жена - доказчица|http://hyaenidae.narod.ru/story4/258.html
+202. Знахарь|http://hyaenidae.narod.ru/story4/221.html
+203. Иван - коровий сын|http://hyaenidae.narod.ru/story4/173.html
+204. Извозчик и лошадь|http://hyaenidae.narod.ru/story4/209.html
+205. Казак и ведьма|http://hyaenidae.narod.ru/story4/219.html
+206. Как волк стал птичкой|http://hyaenidae.narod.ru/story4/184.html
+207. Как лиса шила волку шубу|http://hyaenidae.narod.ru/story4/186.html
+208. Как муж отучил жену от сказок|http://hyaenidae.narod.ru/story4/260.html
+209. Кобылье яйцо|http://hyaenidae.narod.ru/story4/232.html
+210. Коли утонешь|http://hyaenidae.narod.ru/story4/203.html
+211. Куда, миленький, снаряжаешься?|http://hyaenidae.narod.ru/story4/265.html
+212. Курочка, мышка и тетерев|http://hyaenidae.narod.ru/story4/188.html
+213. Лгало и Подлыгало|http://hyaenidae.narod.ru/story4/254.html
+214. Ленивая Арина|http://hyaenidae.narod.ru/story4/264.html
+215. Летучий корабль|http://hyaenidae.narod.ru/story4/176.html
+216. Лиса-плачея|http://hyaenidae.narod.ru/story4/189.html
+217. Лиса - странница|http://hyaenidae.narod.ru/story4/181.html
+218. Медное, серебряное и золотое царства|http://hyaenidae.narod.ru/story4/177.html
+219. Морока|http://hyaenidae.narod.ru/story4/248.html
+220. Мотовило|http://hyaenidae.narod.ru/story4/261.html
+221. Мудрая дева|http://hyaenidae.narod.ru/story4/196.html
+222. Мужик на небе|http://hyaenidae.narod.ru/story4/247.html
+223. Мужицкий кафтан|http://hyaenidae.narod.ru/story4/217.html
+224. Набитый дурак|http://hyaenidae.narod.ru/story4/206.html
+225. Неграмотная деревня|http://hyaenidae.narod.ru/story4/229.html
+226. Не любо - не слушай|http://hyaenidae.narod.ru/story4/245.html
+227. Неправый суд птиц|http://hyaenidae.narod.ru/story4/223.html
+228. Неразгаданная загадка|http://hyaenidae.narod.ru/story4/195.html
+229. Пастушья дудочка|http://hyaenidae.narod.ru/story4/198.html
+230. Петр Великий и кузнец|http://hyaenidae.narod.ru/story4/180.html
+231. Плотник и клин|http://hyaenidae.narod.ru/story4/218.html
+232. Поп и дьякон|http://hyaenidae.narod.ru/story4/227.html
+233. Поп на празднике|http://hyaenidae.narod.ru/story4/236.html
+234. Поп Пахом|http://hyaenidae.narod.ru/story4/230.html
+235. Поповские увертки|http://hyaenidae.narod.ru/story4/231.html
+236. Посуленная половина|http://hyaenidae.narod.ru/story4/194.html
+237. Правда и Кривда|http://hyaenidae.narod.ru/story4/199.html
+238. Присказка|http://hyaenidae.narod.ru/story4/268.html
+239. Пришли вятские в Москву|http://hyaenidae.narod.ru/story4/205.html
+240. Про мужика-бедняка и топор|http://hyaenidae.narod.ru/story4/244.html
+241. Про мышь зубастую да про воробья богатого|http://hyaenidae.narod.ru/story4/222.html
+242. Репа|http://hyaenidae.narod.ru/story4/191.html
+243. Репа и мед|http://hyaenidae.narod.ru/story4/246.html
+244. Рыбацкая и охотничья байки|http://hyaenidae.narod.ru/story4/266.html
+245. Солдат и сало|http://hyaenidae.narod.ru/story4/240.html
+246. Солдат на исповеди|http://hyaenidae.narod.ru/story4/238.html
+247. Солдатская загадка|http://hyaenidae.narod.ru/story4/239.html
+248. Солдатская коляда|http://hyaenidae.narod.ru/story4/242.html
+249. Старинный поп|http://hyaenidae.narod.ru/story4/235.html
+250. Старухина молитва|http://hyaenidae.narod.ru/story4/228.html
+251. С того свету выходец|http://hyaenidae.narod.ru/story4/207.html
+252. Стоит река - вся из молока, берега - из киселя|http://hyaenidae.narod.ru/story4/251.html
+253. Теремок|http://hyaenidae.narod.ru/story4/192.html
+254. Тини-тини, потягивай...|http://hyaenidae.narod.ru/story4/243.html
+255. Топанье и ляганье|http://hyaenidae.narod.ru/story4/226.html
+256. У страха глаза велики|http://hyaenidae.narod.ru/story4/182.html
+257. Фома Беренников|http://hyaenidae.narod.ru/story4/179.html
+258. Фома и Ерема|http://hyaenidae.narod.ru/story4/204.html
+259. Фомка - шут|http://hyaenidae.narod.ru/story4/225.html
+260. Худая жена|http://hyaenidae.narod.ru/story4/255.html
+261. Царица-гусляр|http://hyaenidae.narod.ru/story4/197.html
+262. Царь, старик и бояре|http://hyaenidae.narod.ru/story4/193.html
+263. Чистота, благодать и красота|http://hyaenidae.narod.ru/story4/253.html
+264. Что на базар везешь?|http://hyaenidae.narod.ru/story4/215.html
+265. Шесть братьев - все Агафоны|http://hyaenidae.narod.ru/story4/250.html
+266. Щука с хреном|http://hyaenidae.narod.ru/story4/216.html
+267. Я бы спрятался!|http://hyaenidae.narod.ru/story4/208.html
+268. Ямщик и купец|http://hyaenidae.narod.ru/story4/224.html
+270. Баба-яга и Заморышек|http://hyaenidae.narod.ru/story5/312.html
+271. Бабушка, внучка да курочка|http://hyaenidae.narod.ru/story5/305.html
+272. Батрак|http://hyaenidae.narod.ru/story5/353.html
+273. Батюшка - немец|http://hyaenidae.narod.ru/story5/345.html
+274. Беглый солдат и чёрт|http://hyaenidae.narod.ru/story5/355.html
+275. Безногий и безрукий богатыри|http://hyaenidae.narod.ru/story5/285.html
+276. Береза и три сокола|http://hyaenidae.narod.ru/story5/289.html
+277. Бурёнушка|http://hyaenidae.narod.ru/story5/348.html
+278. В чужом дому хозяина слушай!|http://hyaenidae.narod.ru/story5/338.html
+279. Вазуза и Волга|http://hyaenidae.narod.ru/story5/311.html
+280. Василиса Прекрасная|http://hyaenidae.narod.ru/story5/281.html
+281. Волк - дурень|http://hyaenidae.narod.ru/story5/310.html
+282. Волшебный конь|http://hyaenidae.narod.ru/story5/357.html
+283. Вор|http://hyaenidae.narod.ru/story5/297.html
+284. Вор|http://hyaenidae.narod.ru/story5/298.html
+285. Вор|http://hyaenidae.narod.ru/story5/299.html
+286. Вороватый мужик|http://hyaenidae.narod.ru/story5/300.html
+287. Глупая баба|http://hyaenidae.narod.ru/story5/343.html
+288. Глухой муж|http://hyaenidae.narod.ru/story5/341.html
+289. Горшечник|http://hyaenidae.narod.ru/story5/332.html
+290. Две доли|http://hyaenidae.narod.ru/story5/318.html
+291. Двое из сумы|http://hyaenidae.narod.ru/story5/359.html
+292. Диво|http://hyaenidae.narod.ru/story5/317.html
+293. Диво дивное, чудо чудное|http://hyaenidae.narod.ru/story5/288.html
+294. Доброе слово|http://hyaenidae.narod.ru/story5/292.html
+295. Дока на доку|http://hyaenidae.narod.ru/story5/296.html
+296. Дорогая кожа|http://hyaenidae.narod.ru/story5/303.html
+297. сказка Елена Премудрая|http://hyaenidae.narod.ru/story3/162.html
+298. Жадная старуха|http://hyaenidae.narod.ru/story5/279.html
+299. Жар-птица и Василиса-царевна|http://hyaenidae.narod.ru/story5/283.html
+300. За лапоток - курочку, за курочку - гусочку|http://hyaenidae.narod.ru/story5/270.html
+301. Загадки|http://hyaenidae.narod.ru/story5/319.html
+302. Звериное молоко|http://hyaenidae.narod.ru/story5/286.html
+303. Золотой башмачок|http://hyaenidae.narod.ru/story5/322.html
+304. Золотая рыбка|http://hyaenidae.narod.ru/story5/346.html
+305. Иван Быкович|http://hyaenidae.narod.ru/story5/282.html
+306. Иван крестьянский сын и мужичок сам с пёрст, усы на семь вёрст|http://hyaenidae.narod.ru/story5/352.html
+307. Иван-царевич и Марфа-царевна|http://hyaenidae.narod.ru/story5/350.html
+308. Ивашко и ведьма|http://hyaenidae.narod.ru/story5/349.html
+309. Как жена мужа провожала|http://hyaenidae.narod.ru/story5/336.html
+310. Конь, скатерть и рожок|http://hyaenidae.narod.ru/story5/284.html
+311. Королевна - колдунья|http://hyaenidae.narod.ru/story5/329.html
+312. Кот, петух и лиса|http://hyaenidae.narod.ru/story5/272.html
+313. Кот-воркот, Котофей Котофеевич|http://hyaenidae.narod.ru/story5/307.html
+314. Кощей Бессмертный|http://hyaenidae.narod.ru/story5/321.html
+315. Крылатый, мохнатый да масленый|http://hyaenidae.narod.ru/story5/306.html
+316. Купеческая дочь и служанка|http://hyaenidae.narod.ru/story5/351.html
+317. Курочка|http://hyaenidae.narod.ru/story5/278.html
+318. Леший|http://hyaenidae.narod.ru/story5/333.html
+319. Либо в рай, либо в ад|http://hyaenidae.narod.ru/story5/344.html
+320. Лиса - повитуха|http://hyaenidae.narod.ru/story5/271.html
+321. сказка Медведь|http://hyaenidae.narod.ru/story5/275.html
+322. Медведь, собака и кошка|http://hyaenidae.narod.ru/story5/274.html
+323. Мена|http://hyaenidae.narod.ru/story5/334.html
+324. Мёртвая мать|http://hyaenidae.narod.ru/story5/327.html
+325. Мёртвый друг|http://hyaenidae.narod.ru/story5/328.html
+326. Мороз Иванович|http://hyaenidae.narod.ru/story5/269.html
+327. Мороз, Солнце и Ветер|http://hyaenidae.narod.ru/story5/308.html
+328. Мудрая девица и семь разбойников|http://hyaenidae.narod.ru/story5/295.html
+329. Муж да жена|http://hyaenidae.narod.ru/story5/302.html
+330. Мужик, журавли и медведь|http://hyaenidae.narod.ru/story5/335.html
+331. Мужик и мертвец|http://hyaenidae.narod.ru/story5/324.html
+332. Мужик и мошенники|http://hyaenidae.narod.ru/story5/342.html
+333. Не был ли здесь мой пьяница?|http://hyaenidae.narod.ru/story5/340.html
+334. Неосторожное слово|http://hyaenidae.narod.ru/story5/315.html
+335. Несмеяна - царевна|http://hyaenidae.narod.ru/story5/290.html
+336. Ночные пляски|http://hyaenidae.narod.ru/story5/291.html
+337. сказка О молодце-удальце, молодильных яблоках и живой воде|http://hyaenidae.narod.ru/story5/356.html
+338. Оклеветанная купеческая дочь|http://hyaenidae.narod.ru/story5/293.html
+339. Охотник и его жена|http://hyaenidae.narod.ru/story5/316.html
+340. Разбойники|http://hyaenidae.narod.ru/story5/320.html
+341. Размышления пьяного мужика|http://hyaenidae.narod.ru/story5/337.html
+342. С рыжим да с красным - не связывайся!|http://hyaenidae.narod.ru/story5/339.html
+343. Свинка золотая щетинка, утка золотые пёрышки, золоторогий олень и золотогривый конь|http://hyaenidae.narod.ru/story5/358.html
+344. Свинья и волк|http://hyaenidae.narod.ru/story5/273.html
+345. Сказка о козе лупленой|http://hyaenidae.narod.ru/story5/276.html
+346. Сказка об Иване-царевиче, Жар-птице и о Сером Волке|http://hyaenidae.narod.ru/story5/314.html
+347. Скрипач в аду|http://hyaenidae.narod.ru/story5/331.html
+348. Скряга|http://hyaenidae.narod.ru/story5/304.html
+349. Смерть петушка|http://hyaenidae.narod.ru/story5/277.html
+350. Смерть скупого|http://hyaenidae.narod.ru/story5/330.html
+351. сказка Снегурочка|http://hyaenidae.narod.ru/story5/309.html
+352. Солдат и колдун|http://hyaenidae.narod.ru/story5/325.html
+353. Солдат и царь в лесу|http://hyaenidae.narod.ru/story5/294.html
+354. Солдат избавляет царевну|http://hyaenidae.narod.ru/story5/354.html
+355. Солдат, колдун и сапоги|http://hyaenidae.narod.ru/story5/326.html
+356. Сосватанные дети|http://hyaenidae.narod.ru/story5/323.html
+357. Старуха-говоруха|http://hyaenidae.narod.ru/story5/347.html
+358. Терем мухи|http://hyaenidae.narod.ru/story5/280.html
+359. Удалой батрак|http://hyaenidae.narod.ru/story5/301.html
+360. сказка Фролка-сидень|http://hyaenidae.narod.ru/story5/313.html
+361. Царь - девица|http://hyaenidae.narod.ru/story5/287.html
