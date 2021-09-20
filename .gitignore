@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# project ignore
+udpipe_syntagrus.model
+dataset/corpus.txt
+dataset/tails.*
