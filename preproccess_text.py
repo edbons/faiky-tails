@@ -6,7 +6,9 @@ import wget
 from tqdm import tqdm
 import pickle
 from nltk.corpus import stopwords
+from string import punctuation
 
+punctuation+='«»'
 
 def remove_stops(text: str, stop_words: set) -> str:
     """Description: удаление русских стоп слов по словарю NLTK
@@ -66,12 +68,15 @@ def clean_lemma(lemma, pos):
     return out_lemma
 
 
-def clean_text(text: str) -> str:
+def clean_text(text: str, keep_punct=False) -> str:
     """Description: удаление специальных символов из строки
     
     """
-
-    text = re.sub('[«»()!,;:.\s-]', ' ', text)
+    if keep_punct:
+        for c in punctuation:
+            text = text.replace(c,' {} '.format(c))
+    else:
+        text = re.sub('[«»()!,;:.\s-]', ' ', text)
     return text
 
 
@@ -170,32 +175,34 @@ def tag_ud(text, modelfile='udpipe_syntagrus.model', keep_pos=True, keep_punct=F
     return output
 
 
-if __name__== "__main__":    
-    stops = set(stopwords.words('russian'))
-    print(stops)
+if __name__== "__main__":   
+    test = 'My (very) long, «sentence». No fucking! But: some shit;'
+    print(clean_text(test, keep_punct=True)) 
+    # stops = set(stopwords.words('russian'))
+    # print(stops)
     
-    modelfile = './udpipe_syntagrus.model'
-    # if not os.path.exists(modelfile):
-    #     udpipe_url = 'https://rusvectores.org/static/models/udpipe_syntagrus.model'
-    #     modelfile = wget.download(udpipe_url)    
+    # modelfile = './udpipe_syntagrus.model'
+    # # if not os.path.exists(modelfile):
+    # #     udpipe_url = 'https://rusvectores.org/static/models/udpipe_syntagrus.model'
+    # #     modelfile = wget.download(udpipe_url)    
 
-    root_path = 'C:\\Users\\edbon\\devproj\\faiky-tails\\dataset\\raw\\'
-    corpus = []
+    # root_path = 'C:\\Users\\edbon\\devproj\\faiky-tails\\dataset\\raw\\'
+    # corpus = []
 
-    # for _, dirs, files in os.walk(root_path):
-    #     for file in tqdm(files):
-    #         with open(root_path + file, 'r', encoding='utf-8') as f:
-    #             # print(f"Proccess file {file}...")
-    #             doc = tag_ud(text=f.read(), modelfile=modelfile, keep_pos=True, keep_punct=False)
-    #             # doc = preproccess_text(f.read())
-    #         corpus.append(doc)
+    # # for _, dirs, files in os.walk(root_path):
+    # #     for file in tqdm(files):
+    # #         with open(root_path + file, 'r', encoding='utf-8') as f:
+    # #             # print(f"Proccess file {file}...")
+    # #             doc = tag_ud(text=f.read(), modelfile=modelfile, keep_pos=True, keep_punct=False)
+    # #             # doc = preproccess_text(f.read())
+    # #         corpus.append(doc)
     
-    with open(root_path + '001 Арысь - поле.txt', 'r', encoding='utf-8') as f:
-        doc = tag_ud(text=f.read(), modelfile=modelfile, stop_words=stops, keep_pos=True, keep_punct=False)
-    corpus.append(doc)
+    # with open(root_path + '001 Арысь - поле.txt', 'r', encoding='utf-8') as f:
+    #     doc = tag_ud(text=f.read(), modelfile=modelfile, stop_words=stops, keep_pos=True, keep_punct=False)
+    # corpus.append(doc)
 
-    print(len(corpus))
-    print(corpus[0])
+    # print(len(corpus))
+    # print(corpus[0])
 
     # corpus_file = "./dataset/corpus.txt"
     # with open(corpus_file, "wb") as f:
