@@ -14,6 +14,11 @@ from tqdm import tqdm
 # from parallel import DataParallelModel, DataParallelCriterion
 from transformers import *
 
+def clear_memory(args):
+  for arg in args:
+    del arg
+  torch.cuda.empty_cache()
+
 def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
     '''Create encoding of the previous paragraph (textlines) using the model and tokenizer'''
     clf = []
@@ -21,15 +26,18 @@ def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
     #if nb < 8:
     wds = torch.zeros(nb, gen_len, dtype=torch.long).to(device)
     mask = torch.zeros(nb, gen_len, dtype=torch.long).to(device)
-    for j in range(nb):
-          
+    for j in range(nb):          
         temp = torch.tensor(tokenizer.encode(textlines[j], add_special_tokens=False)[:gen_len])
         wds[j,:len(temp)] = temp.to(device)
         mask[j,:len(temp)] = torch.ones(len(temp), dtype=torch.long).to(device)
-    model.eval()
+    model.eval().to(device)
     outputs = model(wds)
     total = (mask.unsqueeze(2).type_as(outputs[0]) * outputs[0]).sum(dim=1) / mask.type_as(outputs[0]).sum(dim=1).unsqueeze(1)
-    return total
+    
+    if device=='cuda':
+        clear_memory([wds, mask])
+    
+    return total.detach().cpu()
 
 '''Generate a single paragraph'''
 def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, decoding_strategy, ids, tagnum, min_len=None, returnnewmem=False):

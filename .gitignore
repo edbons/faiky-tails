@@ -133,3 +133,4 @@ udpipe_syntagrus.model
 dataset/corpus.txt
 dataset/tails.*
 notes.txt
+*.ipynb
