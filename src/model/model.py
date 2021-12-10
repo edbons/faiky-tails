@@ -13,6 +13,7 @@ from transformers.modeling_utils import (
     prune_conv1d_layer
 )
 
+from eval_utils import model_memory
 
 
 from torch.nn import CrossEntropyLoss
@@ -406,9 +407,6 @@ class MemoryAttention(nn.Module):
         outputs = [a, present] + attn_outputs[1:]
         return outputs  # a, present, (attentions)
 
-
-
-
 class  GPT2MemoryBlock(nn.Module):
     def __init__(self, n_ctx, config, scale=False):
         super(GPT2MemoryBlock, self).__init__()
@@ -439,7 +437,7 @@ class  GPT2MemoryBlock(nn.Module):
         x = x + a
         m = self.mlp(self.ln_2(x))
         x = x + m
-        outputs = [x] + output_attnR[1:]
+        outputs = [x] + list(output_attnR[1:])
         return outputs  # x, present, (attentions)
 
 
@@ -448,8 +446,14 @@ class GPT2MemModel(GPT2Model):
         super(GPT2MemModel, self).__init__(config)
         del self.h
         self.h = nn.ModuleList([GPT2MemoryBlock(config.n_ctx, config, scale=True) for _ in range(config.n_layer)])
+        self.output_hidden_states = config.output_hidden_states
+        self.output_attentions = config.output_attentions
+        
 
-    def forward(self, input_ids, past=None, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None, M=None, Mmask=None, includeprev=False, x_prev=None):
+    def forward(self, input_ids, past=None, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None, M=None, Mmask=None, includeprev=False, x_prev=None, output_past=False):
+        
+        self.output_past = output_past # Not used in original code        
+
         input_shape = input_ids.size()
         input_ids = input_ids.view(-1, input_shape[-1])
         if token_type_ids is not None:
@@ -549,6 +553,8 @@ class GPT2MemLMHeadModel(GPT2LMHeadModel):
     def __init__(self, config):
         super(GPT2MemLMHeadModel, self).__init__(config)
         self.transformer = GPT2MemModel(config)
+        model_memory(self.transformer)
+
         self.init_weights()
         self.tie_weights()
 
@@ -627,7 +633,9 @@ class PlotMachinesModel(nn.Module):
         # else:
         #     self.lmmodel = GPT2MemLMHeadModel.from_pretrained('gpt2-medium', n_positions=n_ctx + gen_len)
 
-        self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len)
+        self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
+
+        model_memory(self.lmmodel)
 
         self.lmmodel.resize_token_embeddings(vocab)
         self.epsilon = 1e-8
@@ -662,7 +670,7 @@ class PlotMachinesModel(nn.Module):
         lm_logits = lmout[1]
         presents = lmout[2]
         if returnpasts:
-            return lm_logits,presents
+            return lm_logits, presents
         if returnlast:
             lasttoken = torch.where(x[:,:] == self.lastidx, torch.ones_like(x[:,:]), torch.zeros_like(x[:,:])).unsqueeze(-1) #[B,503,1]
             lasttoken = lasttoken.type_as(h_dec)*h_dec   

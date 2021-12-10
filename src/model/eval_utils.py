@@ -84,5 +84,8 @@ def evaluate_doc_model(model, val_loader, text_encoder, device, beam, gen_len, k
             sort_keys=True
         )
 
-
-
+def model_memory(model):
+    mem_params = sum([param.nelement() * param.element_size() for param in model.parameters()])
+    mem_bufs = sum([buf.nelement() * buf.element_size() for buf in model.buffers()])
+    mem = mem_params + mem_bufs # in bytes
+    print(f"Model {type(model)} params size:", mem // 1024 // 1024, "mb")

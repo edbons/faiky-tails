@@ -10,7 +10,7 @@ from tqdm import tqdm
 import math
 
 from data_loader import get_paragraph_input_loader, get_paragraph_memory_input_loader
-from eval_utils import format_text, evaluate_doc_model
+from eval_utils import format_text, evaluate_doc_model, model_memory
 from generate_utils import generate_paragraph
 from model import GPT2BaseModel, PlotMachinesModel
 from logger import Logger
@@ -149,12 +149,15 @@ def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model
         train_bar = train_loader
 
     for i, batchargs in enumerate(train_bar, start_iter):
+        print(i, "batch")
         num_updates = i // accum_iter
         model.train()
         loss = run_batch(model, batchargs, device, compute_loss_fct)
+        print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+
         loss.backward()
 
-        running_loss += float(loss.item())
+        running_loss += float(loss.detach().item())
         if show_progress:
             train_bar.set_postfix(loss=running_loss / ((train_log_interval * accum_iter) if num_updates % train_log_interval == 0 and num_updates != 0 else i % (train_log_interval * accum_iter)))
 
@@ -302,10 +305,14 @@ def main(args):
 
     print("Loading Model")
     doc_model.to(device)
+    
+    model_memory(doc_model)
+    
     if n_gpu > 1:
         doc_model = DataParallelModel(doc_model)
         lm_loss = DataParallelCriterion(lm_loss)
-    print("Parallelized")
+        print("Parallelized")
+    
 
     bestloss = -1
     start_iter, running_loss = 1,0
