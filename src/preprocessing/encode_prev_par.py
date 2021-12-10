@@ -15,7 +15,7 @@ def encode_pars(input_file: str, model: str, device: str):
     model = AutoModelWithLMHead.from_pretrained(model)
 
     output = [(0,0,0)]
-    for i, par in enumerate(prevpars):    
+    for i, par in enumerate(prevpars, start=1):    
         output.append((i, par, tfmclassifier([par], model, tokenizer, gen_len=922, device=device)))
 
     output_file = input_file.split('.')[0] + '.pkl'

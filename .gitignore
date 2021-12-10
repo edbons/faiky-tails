@@ -134,3 +134,7 @@ dataset/corpus.txt
 dataset/tails.*
 notes.txt
 *.ipynb
+dataset/plot/*.pkl
+savedir
+checkpoints_local
+launch.json
