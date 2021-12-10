@@ -5,7 +5,17 @@ import math
 import copy
 
 # from transformers.modeling_gpt2 import *
-from transformers.models.gpt2.modeling_gpt2 import *
+from transformers import AdamW
+from transformers import  GPT2Model, GPT2LMHeadModel
+from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2MLP 
+from transformers.modeling_utils import (
+    Conv1D,
+    prune_conv1d_layer
+)
+
+
+
+from torch.nn import CrossEntropyLoss
 
 class GPT2NeighborModel(GPT2Model):
     '''GPT2 model but with slightly altered forward function to include previous paragraph encoding as an additional input'''
@@ -193,7 +203,7 @@ class GPT2BaseModel(nn.Module):
         self.register_buffer('pos_emb_mask', pos_emb_mask)
 
 
-    def _forward(self, x,mask_output,prev, log=False, return_probs=False, returnlast=False, returnnewmem=False, past=None, returnpasts=False):
+    def _forward(self, x, mask_output, prev, log=False, return_probs=False, returnlast=False, returnnewmem=False, past=None, returnpasts=False):
         lmout = self.lmmodel(x, past=past, attention_mask=mask_output, includeprev=self.includeprev, x_prev=prev)
         h_dec = lmout[0]
         lm_logits = lmout[1]
@@ -405,9 +415,11 @@ class  GPT2MemoryBlock(nn.Module):
         nx = config.n_embd
         self.ln_1 = nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
         self.attnextra = MemoryAttention(nx, n_ctx, config, scale)
-        self.attn = Attention(nx, n_ctx, config, scale)
+        # self.attn = Attention(nx, n_ctx, config, scale)
+        self.attn = GPT2Attention(config)
         self.ln_2 = nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
-        self.mlp = MLP(4 * nx, config)
+        # self.mlp = MLP(4 * nx, config)
+        self.mlp = GPT2MLP(4 * nx, config)
 
     def forward(self, x, layer_past=None, attention_mask=None, head_mask=None, M=None, Mmask=None):
         lnx = self.ln_1(x)

@@ -18,6 +18,7 @@ from loss import ParagraphLoss
 from parallel import DataParallelModel, DataParallelCriterion
 # from transformers import *
 from transformers import AutoTokenizer, AutoModelWithLMHead
+from transformers import AdamW
 
 def get_average_scores(hyps, refs, maxlen=400, stop_words=[]):       
     rouge_scorer = rouge.Rouge()
@@ -243,7 +244,7 @@ def main(args):
     #     text_encoder = GPT2Tokenizer.from_pretrained('gpt2')
     # else:
     #     text_encoder = GPT2Tokenizer.from_pretrained('gpt2-medium')
-    text_encoder = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
+    text_encoder = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
 
     text_encoder.add_special_tokens({'bos_token':'_start_',
                                      'cls_token':'_classify_',
@@ -260,7 +261,7 @@ def main(args):
                                                     include_neigh= args.use_neighbor_feat, max_size=args.max_ex,
                                                     include_kw = not args.exclude_kw, dim = args.n_embd, debug_mode=args.debug_mode)
 
-        val_loader = get_paragraph_input_loader(os.path.join(data_dir, "val_encoded.csv"), n_gpu, text_encoder, 
+        val_loader = get_paragraph_input_loader(os.path.join(data_dir, "val_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=0, shuffle=False, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh= args.use_neighbor_feat, max_size=args.num_val_examples,
                                                     include_kw = not args.exclude_kw, dim = args.n_embd, debug_mode=args.debug_mode)
@@ -275,7 +276,7 @@ def main(args):
                                                     include_neigh= args.use_neighbor_feat, max_size = args.max_ex,
                                                     include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True, debug_mode=args.debug_mode)
 
-        val_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "val_encoded.csv"), n_gpu, text_encoder, 
+        val_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "val_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=0, shuffle=False, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh= args.use_neighbor_feat, max_size = args.num_val_examples,
                                                     include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True, debug_mode=args.debug_mode)
@@ -345,7 +346,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_grad_norm', type=int, default=1)
     parser.add_argument('--lr', type=float, default=6.25e-5)
     parser.add_argument('--lr_warmup', type=float, default=0.002)
-    parser.add_argument('--n_embd', type=int, default=1024)
+    parser.add_argument('--n_embd', type=int, default=768)
     parser.add_argument('--n_head', type=int, default=12)
     parser.add_argument('--n_layer', type=int, default=12)
     parser.add_argument('--embd_pdrop', type=float, default=0.1)

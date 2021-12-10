@@ -59,7 +59,7 @@ class ParagraphDataset(Dataset):
         csv_data = self.data[idx].decode("utf-8", "ignore").strip().split('\t')
         kws = csv_data[2].split("[SEP]")
         # print(self.encoder.encode(csv_data[5]))
-        tgt_phrase = self.encoder.encode(csv_data[5].replace("<o>", ""), add_prefix_space=True, add_special_tokens=False)[:self.gen]
+        tgt_phrase = self.encoder.encode(csv_data[5].replace("<o>", ""),  add_special_tokens=False)[:self.gen] # add_prefix_space=True,
         start = torch.LongTensor([self.encoder.bos_token_id])
         clstok = torch.LongTensor([self.encoder.cls_token_id])
         end = torch.LongTensor([self.encoder.eos_token_id])
@@ -87,7 +87,7 @@ class ParagraphDataset(Dataset):
             for k in kws:
                 if i - 1 >= self.ctx:
                     break
-                enck = self.encoder.encode(k.strip(), add_prefix_space=True, add_special_tokens=False)[:self.ctx - i]
+                enck = self.encoder.encode(k.strip(),  add_special_tokens=False)[:self.ctx - i] # add_prefix_space=True,
                 # print(enck, i)
                 pad_output[i:i + len(enck)] = torch.LongTensor(enck)
                 pad_output[i + len(enck)] = keytok
@@ -190,7 +190,7 @@ class FullStoryDataset(Dataset):
             for k in kws:
                 if i - 1 >= self.ctx:
                     break
-                enck = self.encoder.encode(k.strip(), add_prefix_space=True, add_special_tokens=False)[:self.ctx - i]
+                enck = self.encoder.encode(k.strip(),  add_special_tokens=False)[:self.ctx - i] # add_prefix_space=True,
                 # print(enck, i)
                 pad_output[i:i + len(enck)] = torch.LongTensor(enck)
                 pad_output[i + len(enck)] = keytok
@@ -270,8 +270,7 @@ class ParagraphWithMemoryDataset(Dataset):
 
                 # if temp[0] != k or temp[1] != self.data[k].decode('utf-8', 'ignore').split("\t")[-1].replace("<o>","").strip():
                 if temp[k][0] != k or temp[k][1] != self.data[k].decode('utf-8', 'ignore').split("\t")[-1].replace("<o>","").strip():
-                    print(str(temp[k][0]))
-                    print(str(k))
+                    print(str(temp[k][0]), str(k))
                     print(temp[k][1])
                     print(self.data[k].decode('utf-8', 'ignore').split("\t")[-1].replace("<o>","").strip())
                     continue
@@ -322,7 +321,7 @@ class ParagraphWithMemoryDataset(Dataset):
         csv_data = self.data[idx].decode("utf-8", "ignore").strip().split('\t')
         kws = csv_data[2].split("[SEP]")
 
-        tgt_phrase = self.encoder.encode(csv_data[5].replace("<o>", ""), add_prefix_space=True, add_special_tokens=False)[:self.gen]
+        tgt_phrase = self.encoder.encode(csv_data[5].replace("<o>", ""),  add_special_tokens=False)[:self.gen] # add_prefix_space=True,
         start = torch.LongTensor([self.encoder.bos_token_id])
         clstok = torch.LongTensor([self.encoder.cls_token_id])
         end = torch.LongTensor([self.encoder.eos_token_id])
@@ -360,7 +359,7 @@ class ParagraphWithMemoryDataset(Dataset):
             for k in kws:
                 if i - 1 >= self.ctx:
                     break
-                enck = self.encoder.encode(k.strip(), add_prefix_space=True, add_special_tokens=False)[:self.ctx - i]
+                enck = self.encoder.encode(k.strip(), add_special_tokens=False)[:self.ctx - i] # , add_prefix_space=True
                 # print(enck, i)
                 pad_output[i:i + len(enck)] = torch.LongTensor(enck)
                 pad_output[i + len(enck)] = keytok
