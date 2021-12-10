@@ -32,10 +32,6 @@ def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
         mask[j,:len(temp)] = torch.ones(len(temp), dtype=torch.long).to(device)
     model.eval().to(device)
     outputs = model(wds)
-    # print(outputs.keys())
-    # print(outputs)
-
-    print(outputs['hidden_states'][0].size())
 
     # total = (mask.unsqueeze(2).type_as(outputs[0]) * outputs[0]).sum(dim=1) / mask.type_as(outputs[0]).sum(dim=1).unsqueeze(1)
     total = (mask.unsqueeze(2).type_as(outputs['hidden_states'][0]) * outputs['hidden_states'][0]).sum(dim=1) / mask.type_as(outputs['hidden_states'][0]).sum(dim=1).unsqueeze(1)
