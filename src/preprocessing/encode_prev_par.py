@@ -12,7 +12,7 @@ def encode_pars(input_file: str, model: str, device: str):
     prevpars = df['[PREVIOUS_PARAGRAPH]'].to_list()
     
     tokenizer = AutoTokenizer.from_pretrained(model)
-    model = AutoModelWithLMHead.from_pretrained(model)
+    model = AutoModelWithLMHead.from_pretrained(model, output_hidden_states=True)
 
     output = [(0,0,0)]
     for i, par in enumerate(prevpars, start=1):    
