@@ -6,7 +6,7 @@ import argparse
 import torch
 
 
-def encode_pars(input_file: str, model: str, device: str): 
+def encode_pars(input_file: str, model: str, device: str, gen_len=922): 
     df = pd.read_csv(input_file, sep='\t')
     df['[PREVIOUS_PARAGRAPH]'].fillna('dummy', inplace=True)
     prevpars = df['[PREVIOUS_PARAGRAPH]'].to_list()
@@ -16,7 +16,7 @@ def encode_pars(input_file: str, model: str, device: str):
 
     output = [(0,0,0)]
     for i, par in enumerate(prevpars, start=1):    
-        output.append((i, par, tfmclassifier([par], model, tokenizer, gen_len=922, device=device)))
+        output.append((i, par, tfmclassifier([par], model, tokenizer, gen_len=gen_len, device=device)))
 
     output_file = input_file.split('.')[0] + '.pkl'
     with open(output_file, 'wb') as f:
