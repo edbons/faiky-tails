@@ -8,7 +8,7 @@ import torch
 
 def encode_pars(input_file: str, model: str, device: str, gen_len=922): 
     df = pd.read_csv(input_file, sep='\t')
-    df['[PREVIOUS_PARAGRAPH]'].fillna('dummy', inplace=True)
+    # df['[PREVIOUS_PARAGRAPH]'].fillna('dummy', inplace=True)
     prevpars = df['[PREVIOUS_PARAGRAPH]'].to_list()
     
     tokenizer = AutoTokenizer.from_pretrained(model)

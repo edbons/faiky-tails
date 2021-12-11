@@ -636,6 +636,7 @@ class PlotMachinesModel(nn.Module):
         self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
 
         model_memory(self.lmmodel)
+        print(type(self.lmmodel), self.lmmodel.device)
 
         self.lmmodel.resize_token_embeddings(vocab)
         self.epsilon = 1e-8
@@ -660,20 +661,26 @@ class PlotMachinesModel(nn.Module):
 
         x, mask_output, mem, mmask, prev, pmask, pvect = args
 
+        for i, par in enumerate(args):
+            print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
+
         n_ctx = self.n_ctx
         #print(mem)
         if prev is not None:
-            mem,mmask= self.updatememory(x, mem, mmask, prev, pmask)
+            mem, mmask= self.updatememory(x, mem, mmask, prev, pmask)
 
         lmout = self.lmmodel(x, past=past, attention_mask=mask_output, M=mem, Mmask=mmask, includeprev=self.includeprev, x_prev=pvect)
+        print("lmout", lmout.device, lmout.keys())
+
         h_dec = lmout[0]
         lm_logits = lmout[1]
         presents = lmout[2]
+        
         if returnpasts:
             return lm_logits, presents
         if returnlast:
             lasttoken = torch.where(x[:,:] == self.lastidx, torch.ones_like(x[:,:]), torch.zeros_like(x[:,:])).unsqueeze(-1) #[B,503,1]
-            lasttoken = lasttoken.type_as(h_dec)*h_dec   
+            lasttoken = lasttoken.type_as(h_dec) * h_dec   
             hdecmasked = lasttoken.sum(dim=1) #[B,768]
             return lm_logits, hdecmasked
         return lm_logits
