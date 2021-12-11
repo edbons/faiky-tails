@@ -41,8 +41,8 @@ def run_batch(model, args, device, compute_loss_fct):
         if arg is not None:
             arg = arg.to(device)
 
-    print("run_batch", torch.cuda.memory_stats())
-    print(torch.cuda.memory_summary()) 
+    # print("run_batch", torch.cuda.memory_stats())
+    # print(torch.cuda.memory_summary()) 
 
     output = model(*args)
     allloss = compute_loss_fct(output, args[0], args[1])
