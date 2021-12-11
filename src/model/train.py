@@ -41,6 +41,9 @@ def run_batch(model, args, device, compute_loss_fct):
         if arg is not None:
             arg = arg.to(device)
 
+    print("run_batch", torch.cuda.memory_stats())
+    print(torch.cuda.memory_summary()) 
+
     output = model(*args)
     allloss = compute_loss_fct(output, args[0], args[1])
     
@@ -275,7 +278,7 @@ def main(args):
     elif args.use_model == "plotmachines":
 
         train_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "train_encoded.csv"), args.n_batch, text_encoder, 
-                                                    num_workers=3, shuffle=True, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
+                                                    num_workers=1, shuffle=True, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh= args.use_neighbor_feat, max_size = args.max_ex,
                                                     include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True, debug_mode=args.debug_mode)
 

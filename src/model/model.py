@@ -421,6 +421,9 @@ class  GPT2MemoryBlock(nn.Module):
 
     def forward(self, x, layer_past=None, attention_mask=None, head_mask=None, M=None, Mmask=None):
         lnx = self.ln_1(x)
+
+        print("GPT2MemoryBlock", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+
         output_attnR = self.attn(lnx,
                                 layer_past=layer_past,
                                 attention_mask=attention_mask,
@@ -508,10 +511,16 @@ class GPT2MemModel(GPT2Model):
 
         output_shape = input_shape + (hidden_states.size(-1),)
 
+        print("GPT2MemModel", torch.cuda.memory_stats())
+        print(torch.cuda.memory_summary()) 
+
         presents = ()
         all_attentions = []
         all_hidden_states = ()
         for i, (block, layer_past) in enumerate(zip(self.h, past)):
+
+            print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+
             if self.output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states.view(*output_shape),)
 
@@ -638,7 +647,6 @@ class PlotMachinesModel(nn.Module):
         self.lmmodel.to(self.device)
 
         model_memory(self.lmmodel)
-        print(type(self.lmmodel), self.lmmodel.device)
 
         self.lmmodel.resize_token_embeddings(vocab)
         self.epsilon = 1e-8
@@ -660,11 +668,23 @@ class PlotMachinesModel(nn.Module):
     pvect: [B, D] - previous paragraph encoding to use as neighboring input vector
     '''
     def _forward(self, *args, log=False, return_probs=False, returnnewmem=False, returnlast=False, past=None, returnpasts=False):
-
+        
+        # print("new", self.device)
+        # for i, par in enumerate(args):            
+        #     par = par.to(self.device)
+        #     print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
+        
         x, mask_output, mem, mmask, prev, pmask, pvect = args
+        
+        x = x.to(self.device)
+        mask_output = mask_output.to(self.device)
+        mem = mem.to(self.device) 
+        mmask = mmask.to(self.device) 
+        prev = prev.to(self.device) 
+        pmask = pmask.to(self.device) 
+        pvect = pvect.to(self.device)
 
-        for i, par in enumerate(args):
-            print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
+        # print(x.device, mask_output.device, mem.device, mmask.device, prev.device, pmask.device, pvect.device)
 
         n_ctx = self.n_ctx
         #print(mem)
@@ -688,6 +708,10 @@ class PlotMachinesModel(nn.Module):
         return lm_logits
 
     def updatememory(self, *args):
+        for i, par in enumerate(args):            
+            # par = par.to(self.device)
+            print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
+        
         x, mem, mmask, prev, pmask = args  #xraw = [B,T]
         mem[:,: self.n_ctx-2, :]  = self.lmmodel.transformer.wte(x[:,1:self.n_ctx-1])
         if prev is not None:
@@ -801,8 +825,5 @@ class PlotMachinesModel(nn.Module):
         else:
             raise NotImplementedError
        
-
-
     def append_batch(self, X, next_idx):
         return torch.cat((X, next_idx), 1)
- 
