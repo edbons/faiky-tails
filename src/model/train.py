@@ -285,7 +285,7 @@ def main(args):
                                                     include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True, debug_mode=args.debug_mode)
 
         print("Train length: {}, Validation length: {}".format(len(train_loader), len(val_loader)))
-        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, use_offline_gpt2 = args.use_offline_gpt2)
+        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, use_offline_gpt2 = args.use_offline_gpt2, device=device)
     
 
 
@@ -304,9 +304,10 @@ def main(args):
     lm_loss = ParagraphLoss(criterion, n_ctx=n_ctx, gen_len=gen_len)
 
     print("Loading Model")
-    doc_model.to(device)
+    doc_model.to(device)    
     
     model_memory(doc_model)
+    print(type(doc_model), doc_model.device)
     
     if n_gpu > 1:
         doc_model = DataParallelModel(doc_model)

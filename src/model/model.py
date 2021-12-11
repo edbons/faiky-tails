@@ -617,13 +617,14 @@ class PlotMachinesModel(nn.Module):
     lastidx: eos index in tokenizer
     use_offline_gpt2: true if we've already downloaded from huggingface to server
     '''
-    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,  use_offline_gpt2=False):
+    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,  use_offline_gpt2=False, device=None):
         ###ctx: [<h_prev>/<start> kw<=100 _<i/b/c/t> ] gen<=400 <end> == 503
         #LM mask:[0x101][1x401] 0 - padded
         super(PlotMachinesModel,self).__init__()
         self.n_ctx = n_ctx
         self.gen_len = gen_len
         self.lastidx = lastidx
+        self.device = device
 
         self.memupd = GatedMemoryUpdate(cfg, n_ctx-2+cfg.memstatesize)
         # if use_offline_gpt2:
@@ -634,6 +635,7 @@ class PlotMachinesModel(nn.Module):
         #     self.lmmodel = GPT2MemLMHeadModel.from_pretrained('gpt2-medium', n_positions=n_ctx + gen_len)
 
         self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
+        self.lmmodel.to(self.device)
 
         model_memory(self.lmmodel)
         print(type(self.lmmodel), self.lmmodel.device)
