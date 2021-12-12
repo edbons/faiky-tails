@@ -5,9 +5,10 @@ import math
 import copy
 
 # from transformers.modeling_gpt2 import *
+from transformers.modeling_gpt2 import Attention, MLP
 from transformers import AdamW
 from transformers import  GPT2Model, GPT2LMHeadModel
-from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2MLP 
+# from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2MLP 
 from transformers.modeling_utils import (
     Conv1D,
     prune_conv1d_layer
@@ -415,12 +416,12 @@ class  GPT2MemoryBlock(nn.Module):
         nx = config.n_embd
         self.ln_1 = nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
         self.attnextra = MemoryAttention(nx, n_ctx, config, scale)
-        # self.attn = Attention(nx, n_ctx, config, scale)        
+        self.attn = Attention(nx, n_ctx, config, scale)        
         
-        self.attn = GPT2Attention(config)
+        # self.attn = GPT2Attention(config)
         self.ln_2 = nn.LayerNorm(nx, eps=config.layer_norm_epsilon)
-        # self.mlp = MLP(4 * nx, config)
-        self.mlp = GPT2MLP(4 * nx, config)
+        self.mlp = MLP(4 * nx, config)
+        # self.mlp = GPT2MLP(4 * nx, config)
 
     def forward(self, x, layer_past=None, attention_mask=None, head_mask=None, M=None, Mmask=None):
         # print("x", x.device, x.element_size() * x.nelement() // 1024)
@@ -437,6 +438,8 @@ class  GPT2MemoryBlock(nn.Module):
         # if head_mask is not None:
         #   print("head_mask", head_mask.device, head_mask.element_size() * head_mask.nelement() // 1024)
 
+        print("before aR", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+
         output_attnR = self.attn(lnx,
                                 layer_past=layer_past,
                                 attention_mask=attention_mask,
@@ -445,6 +448,8 @@ class  GPT2MemoryBlock(nn.Module):
         # print("aR", output_attnR[0].device, output_attnR[0].element_size() * output_attnR[0].nelement() // 1024)
         
         aR = output_attnR[0]  # output_attn: a, present, (attentions)
+
+        print("before aL", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
         output_attnL = self.attnextra(lnx,
                                 layer_past=layer_past,
                                 head_mask=head_mask,
@@ -463,6 +468,9 @@ class  GPT2MemoryBlock(nn.Module):
         # print("after", torch.cuda.memory_summary())
 
         outputs = [x] + list(output_attnR[1:])
+
+        print("outputs", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+        
         return outputs  # x, present, (attentions)
 
 
@@ -543,7 +551,7 @@ class GPT2MemModel(GPT2Model):
         all_hidden_states = ()
         for i, (block, layer_past) in enumerate(zip(self.h, past)):
 
-            # print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+            print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
             # print("block", torch.cuda.memory_summary())
             
             if self.output_hidden_states:
@@ -562,6 +570,8 @@ class GPT2MemModel(GPT2Model):
 
             if self.output_attentions:
                 all_attentions.append(outputs[2])
+
+            print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
 
         hidden_states = self.ln_f(hidden_states)
 

@@ -17,8 +17,9 @@ from logger import Logger
 from loss import ParagraphLoss
 from parallel import DataParallelModel, DataParallelCriterion
 # from transformers import *
-from transformers import AutoTokenizer, AutoModelWithLMHead
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, AutoTokenizer, AutoModel, AutoModelWithLMHead
 from transformers import AdamW
+
 
 def get_average_scores(hyps, refs, maxlen=400, stop_words=[]):       
     rouge_scorer = rouge.Rouge()
@@ -250,7 +251,9 @@ def main(args):
     #     text_encoder = GPT2Tokenizer.from_pretrained('gpt2')
     # else:
     #     text_encoder = GPT2Tokenizer.from_pretrained('gpt2-medium')
-    text_encoder = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
+    
+    text_encoder = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True) # , add_prefix_space=True
+    # text_encoder = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")  # , add_prefix_space=True
 
     text_encoder.add_special_tokens({'bos_token':'_start_',
                                      'cls_token':'_classify_',
