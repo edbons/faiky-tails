@@ -5,7 +5,7 @@ import random
 import numpy as np
 import torch
 from tqdm import tqdm
-from pytorch_transformers import *
+# from pytorch_transformers import *
 
 
 def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, decoding_strategy, min_len=None):
