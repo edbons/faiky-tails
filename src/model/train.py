@@ -314,7 +314,7 @@ def main(args):
     
     model_memory(doc_model)
     print(type(doc_model), doc_model.device)
-    
+
     if n_gpu > 1:
         doc_model = DataParallelModel(doc_model)
         lm_loss = DataParallelCriterion(lm_loss)

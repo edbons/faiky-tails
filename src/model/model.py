@@ -477,8 +477,10 @@ class  GPT2MemoryBlock(nn.Module):
 class GPT2MemModel(GPT2Model):
     def __init__(self, config, use_dual_att=False):
         super(GPT2MemModel, self).__init__(config)
+        print(self)
         del self.h
         self.h = nn.ModuleList([GPT2MemoryBlock(config.n_ctx, config, scale=True) for _ in range(config.n_layer)])
+        print("after", self)
         self.output_hidden_states = config.output_hidden_states
         self.output_attentions = config.output_attentions
         
