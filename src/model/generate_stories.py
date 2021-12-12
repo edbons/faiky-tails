@@ -6,6 +6,8 @@ import rouge
 import torch
 from torch import nn
 from tqdm import tqdm
+import gc
+
 
 # from eval_utils import format_text
 # from data_loader import get_paragraph_input_loader, get_fullstory_loader
@@ -15,9 +17,11 @@ from tqdm import tqdm
 # from transformers import *
 
 def clear_memory(args):
+  print("Clear memory for num objects:", len(args))
   for arg in args:
     del arg
   torch.cuda.empty_cache()
+  gc.collect()
 
 def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
     '''Create encoding of the previous paragraph (textlines) using the model and tokenizer'''

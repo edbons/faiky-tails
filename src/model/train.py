@@ -152,11 +152,11 @@ def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model
         train_bar = train_loader
 
     for i, batchargs in enumerate(train_bar, start_iter):
-        print(i, "batch")
+        # print(i, "batch")
         num_updates = i // accum_iter
         model.train()
         loss = run_batch(model, batchargs, device, compute_loss_fct)
-        print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
+        # print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
 
         loss.backward()
 

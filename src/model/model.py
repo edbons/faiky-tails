@@ -18,7 +18,7 @@ from eval_utils import model_memory
 
 from torch.nn import CrossEntropyLoss
 
-from model.generate_stories import clear_memory
+from generate_stories import clear_memory
 
 class GPT2NeighborModel(GPT2Model):
     '''GPT2 model but with slightly altered forward function to include previous paragraph encoding as an additional input'''
@@ -430,19 +430,19 @@ class  GPT2MemoryBlock(nn.Module):
         # print(torch.cuda.memory_summary())
         # print(self.attn.device)
         torch.cuda.empty_cache()
-        print("lnx", lnx.device, lnx.element_size() * lnx.nelement() // 1024)
-        if layer_past is not None:
-          print("layer_past", layer_past.device, layer_past.element_size() * layer_past.nelement() // 1024)
-        print("attention_mask", attention_mask.device, attention_mask.element_size() * attention_mask.nelement() // 1024)
-        if head_mask is not None:
-          print("head_mask", head_mask.device, head_mask.element_size() * head_mask.nelement() // 1024)
+        # print("lnx", lnx.device, lnx.element_size() * lnx.nelement() // 1024)
+        # if layer_past is not None:
+        #   print("layer_past", layer_past.device, layer_past.element_size() * layer_past.nelement() // 1024)
+        # print("attention_mask", attention_mask.device, attention_mask.element_size() * attention_mask.nelement() // 1024)
+        # if head_mask is not None:
+        #   print("head_mask", head_mask.device, head_mask.element_size() * head_mask.nelement() // 1024)
 
         output_attnR = self.attn(lnx,
                                 layer_past=layer_past,
                                 attention_mask=attention_mask,
                                 head_mask=head_mask)
         
-        print("aR", output_attnR[0].device, output_attnR[0].element_size() * output_attnR[0].nelement() // 1024)
+        # print("aR", output_attnR[0].device, output_attnR[0].element_size() * output_attnR[0].nelement() // 1024)
         
         aR = output_attnR[0]  # output_attn: a, present, (attentions)
         output_attnL = self.attnextra(lnx,
@@ -452,14 +452,15 @@ class  GPT2MemoryBlock(nn.Module):
                                 Mmask=Mmask)
         aL = output_attnL[0]  # output_attn: a, present, (attentions)
         
-        print("aL", aL.device, aL.element_size() * aL.nelement() // 1024)
+        # print("aL", aL.device, aL.element_size() * aL.nelement() // 1024)
 
         a = (aL + aR) / 2.0
         x = x + a
         m = self.mlp(self.ln_2(x))
         x = x + m
-        
-        clear_memory([a, m])
+        # print(torch.cuda.memory_summary())
+        # clear_memory([a.detach().cpu(), m.detach().cpu(), aL.detach().cpu(), aR.detach().cpu(), output_attnL, lnx.detach().cpu()])
+        # print("after", torch.cuda.memory_summary())
 
         outputs = [x] + list(output_attnR[1:])
         return outputs  # x, present, (attentions)
@@ -732,9 +733,9 @@ class PlotMachinesModel(nn.Module):
         return lm_logits
 
     def updatememory(self, *args):
-        for i, par in enumerate(args):            
-            # par = par.to(self.device)
-            print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
+        # for i, par in enumerate(args):            
+        #     # par = par.to(self.device)
+        #     print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
         
         x, mem, mmask, prev, pmask = args  #xraw = [B,T]
         mem[:,: self.n_ctx-2, :]  = self.lmmodel.transformer.wte(x[:,1:self.n_ctx-1])
