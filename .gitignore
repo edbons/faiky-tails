@@ -139,3 +139,4 @@ dataset/plot/*.pkl
 savedir
 checkpoints_local
 launch.json
+gpt3

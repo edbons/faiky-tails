@@ -119,6 +119,11 @@ class GPT2NeighborModel(GPT2Model):
             return outputs  
 
         else:
+   
+            # print(past.device) None       
+            # print(token_type_ids.device) None
+            # print(position_ids.device) None
+            # print(head_mask.device) None
             return super().forward(input_ids, past=past, attention_mask=attention_mask, token_type_ids=token_type_ids, position_ids=position_ids, head_mask=head_mask)
 
 
@@ -211,6 +216,14 @@ class GPT2BaseModel(nn.Module):
 
 
     def _forward(self, x, mask_output, prev, log=False, return_probs=False, returnlast=False, returnnewmem=False, past=None, returnpasts=False):
+        x = x.to(self.device)
+        mask_output = mask_output.to(self.device)  
+        if prev is not None: 
+          prev = prev.to(self.device) 
+        
+        if prev is not None: 
+          prev = prev.to(self.device) 
+
         lmout = self.lmmodel(x, past=past, attention_mask=mask_output, includeprev=self.includeprev, x_prev=prev)
         h_dec = lmout[0]
         lm_logits = lmout[1]
