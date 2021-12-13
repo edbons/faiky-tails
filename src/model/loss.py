@@ -31,10 +31,12 @@ class ParagraphLoss(nn.Module):
         self.tgt = gen_len
 
     def forward(self, lm_logits, X, mask):
-        ## LM Loss, but ignoring the ctx tokens
+        ## LM Loss, but ignoring the ctx tokens        
+        
         x_shifted = X[:, self.ctx:].contiguous().view(-1) #[102:] (text only)
         mask = mask[:, self.ctx:].view(-1, mask.size(-1) - (self.ctx)).float() #[102:]
-        lm_logits = lm_logits[:, self.ctx-1:-1, :].contiguous().view(-1, lm_logits.size(-1)) #shifted over predictions
+        lm_logits = lm_logits[:, self.ctx-1:-1, :].contiguous().view(-1, lm_logits.size(-1)) #shifted over predictions        
+        
         lm_losses = self.lm_criterion(lm_logits, x_shifted)
         lm_losses = lm_losses.view(X.size(0), -1)
         lm_losses = lm_losses * mask

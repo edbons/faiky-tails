@@ -180,20 +180,23 @@ class GPT2BaseModel(nn.Module):
     lastidx: eos index in tokenizer
     use_offline_gpt2: true if we've already downloaded from huggingface to server
     '''
-    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,use_offline_gpt2=False ):
+    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0, use_offline_gpt2=False, device=None):
         ###ctx: [<h_prev>/<start> kw<=100 _<i/b/c/t> ] gen<=400 <end> == 503
         #LM mask:[0x101][1x401] 0 - padded
         super(GPT2BaseModel,self).__init__()
 
-        if use_offline_gpt2:
-            self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('./gpt2model', n_ctx=n_ctx+gen_len, n_positions=n_ctx+gen_len)
-        elif cfg.debug_mode:
-            self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2', n_ctx=n_ctx + gen_len,
-                                                                n_positions=n_ctx + gen_len)
-        else:
-            self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2-medium', n_ctx=n_ctx + gen_len,
-                                                                n_positions=n_ctx + gen_len)
-        
+        # if use_offline_gpt2:
+        #     self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('./gpt2model', n_ctx=n_ctx+gen_len, n_positions=n_ctx+gen_len)
+        # elif cfg.debug_mode:
+        #     self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2', n_ctx=n_ctx + gen_len,
+        #                                                         n_positions=n_ctx + gen_len)
+        # else:
+        #     self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2-medium', n_ctx=n_ctx + gen_len,
+        #                                                         n_positions=n_ctx + gen_len)
+        self.device = device
+        self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
+        self.lmmodel.to(self.device)
+
         
         self.lmmodel.resize_token_embeddings(vocab) 
         self.includeprev = includeprev
@@ -212,8 +215,10 @@ class GPT2BaseModel(nn.Module):
         h_dec = lmout[0]
         lm_logits = lmout[1]
         presents = lmout[2]
+        
         if returnpasts:
             return lm_logits,presents
+        
         if returnlast:
             lasttoken = torch.where(x[:,:,0] == self.lastidx, torch.ones_like(x[:,:,0]), torch.zeros_like(x[:,:,0])).unsqueeze(-1) #[B,503,1]
             lasttoken = lasttoken.type_as(h_dec)*h_dec   
@@ -424,32 +429,18 @@ class  GPT2MemoryBlock(nn.Module):
         # self.mlp = GPT2MLP(4 * nx, config)
 
     def forward(self, x, layer_past=None, attention_mask=None, head_mask=None, M=None, Mmask=None):
-        # print("x", x.device, x.element_size() * x.nelement() // 1024)
+
         lnx = self.ln_1(x)
 
-        # print("GPT2MemoryBlock")
-        # print(torch.cuda.memory_summary())
-        # print(self.attn.device)
         torch.cuda.empty_cache()
-        # print("lnx", lnx.device, lnx.element_size() * lnx.nelement() // 1024)
-        # if layer_past is not None:
-        #   print("layer_past", layer_past.device, layer_past.element_size() * layer_past.nelement() // 1024)
-        # print("attention_mask", attention_mask.device, attention_mask.element_size() * attention_mask.nelement() // 1024)
-        # if head_mask is not None:
-        #   print("head_mask", head_mask.device, head_mask.element_size() * head_mask.nelement() // 1024)
-
-        print("before aR", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
 
         output_attnR = self.attn(lnx,
                                 layer_past=layer_past,
                                 attention_mask=attention_mask,
                                 head_mask=head_mask)
-        
-        # print("aR", output_attnR[0].device, output_attnR[0].element_size() * output_attnR[0].nelement() // 1024)
-        
+         
         aR = output_attnR[0]  # output_attn: a, present, (attentions)
 
-        print("before aL", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
         output_attnL = self.attnextra(lnx,
                                 layer_past=layer_past,
                                 head_mask=head_mask,
@@ -457,19 +448,13 @@ class  GPT2MemoryBlock(nn.Module):
                                 Mmask=Mmask)
         aL = output_attnL[0]  # output_attn: a, present, (attentions)
         
-        # print("aL", aL.device, aL.element_size() * aL.nelement() // 1024)
 
         a = (aL + aR) / 2.0
         x = x + a
         m = self.mlp(self.ln_2(x))
         x = x + m
-        # print(torch.cuda.memory_summary())
-        # clear_memory([a.detach().cpu(), m.detach().cpu(), aL.detach().cpu(), aR.detach().cpu(), output_attnL, lnx.detach().cpu()])
-        # print("after", torch.cuda.memory_summary())
 
         outputs = [x] + list(output_attnR[1:])
-
-        print("outputs", torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
         
         return outputs  # x, present, (attentions)
 
@@ -477,10 +462,10 @@ class  GPT2MemoryBlock(nn.Module):
 class GPT2MemModel(GPT2Model):
     def __init__(self, config, use_dual_att=False):
         super(GPT2MemModel, self).__init__(config)
-        print(self)
+    
         del self.h
         self.h = nn.ModuleList([GPT2MemoryBlock(config.n_ctx, config, scale=True) for _ in range(config.n_layer)])
-        print("after", self)
+    
         self.output_hidden_states = config.output_hidden_states
         self.output_attentions = config.output_attentions
         
@@ -544,18 +529,12 @@ class GPT2MemModel(GPT2Model):
         output_shape = input_shape + (hidden_states.size(-1),)
 
         torch.cuda.empty_cache()
-        # print("GPT2MemModel", torch.cuda.memory_stats())
-        # print(torch.cuda.memory_stats())
-        # print(torch.cuda.memory_summary()) 
 
         presents = ()
         all_attentions = []
         all_hidden_states = ()
         for i, (block, layer_past) in enumerate(zip(self.h, past)):
-
-            print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
-            # print("block", torch.cuda.memory_summary())
-            
+          
             if self.output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states.view(*output_shape),)
 
@@ -572,8 +551,6 @@ class GPT2MemModel(GPT2Model):
 
             if self.output_attentions:
                 all_attentions.append(outputs[2])
-
-            print(i, torch.cuda.memory_stats()['allocated_bytes.all.current'] // 1024 // 1024)
 
         hidden_states = self.ln_f(hidden_states)
 
@@ -599,7 +576,6 @@ class GPT2MemLMHeadModel(GPT2LMHeadModel):
     def __init__(self, config):
         super(GPT2MemLMHeadModel, self).__init__(config)
         self.transformer = GPT2MemModel(config)
-        model_memory(self.transformer)
 
         self.init_weights()
         self.tie_weights()
@@ -683,8 +659,6 @@ class PlotMachinesModel(nn.Module):
         self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
         self.lmmodel.to(self.device)
 
-        model_memory(self.lmmodel)
-
         self.lmmodel.resize_token_embeddings(vocab)
         self.epsilon = 1e-8
         self.cfg = cfg
@@ -706,22 +680,18 @@ class PlotMachinesModel(nn.Module):
     '''
     def _forward(self, *args, log=False, return_probs=False, returnnewmem=False, returnlast=False, past=None, returnpasts=False):
         
-        # print("new", self.device)
-        # for i, par in enumerate(args):            
-        #     par = par.to(self.device)
-        #     print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
-        
+       
         x, mask_output, mem, mmask, prev, pmask, pvect = args
         
         x = x.to(self.device)
         mask_output = mask_output.to(self.device)
         mem = mem.to(self.device) 
-        mmask = mmask.to(self.device) 
-        prev = prev.to(self.device) 
-        pmask = pmask.to(self.device) 
+        mmask = mmask.to(self.device)
+        if prev is not None: 
+          prev = prev.to(self.device) 
+        if pmask is not None:
+          pmask = pmask.to(self.device) 
         pvect = pvect.to(self.device)
-
-        # print(x.device, mask_output.device, mem.device, mmask.device, prev.device, pmask.device, pvect.device)
 
         n_ctx = self.n_ctx
         #print(mem)
@@ -729,11 +699,10 @@ class PlotMachinesModel(nn.Module):
             mem, mmask= self.updatememory(x, mem, mmask, prev, pmask)
 
         lmout = self.lmmodel(x, past=past, attention_mask=mask_output, M=mem, Mmask=mmask, includeprev=self.includeprev, x_prev=pvect)
-        print("lmout", lmout.device, lmout.keys())
 
         h_dec = lmout[0]
         lm_logits = lmout[1]
-        presents = lmout[2]
+        # presents = lmout[2] # None
         
         if returnpasts:
             return lm_logits, presents
@@ -745,9 +714,6 @@ class PlotMachinesModel(nn.Module):
         return lm_logits
 
     def updatememory(self, *args):
-        # for i, par in enumerate(args):            
-        #     # par = par.to(self.device)
-        #     print(i, par.shape, par.device, par.element_size() * par.nelement() // 1024)
         
         x, mem, mmask, prev, pmask = args  #xraw = [B,T]
         mem[:,: self.n_ctx-2, :]  = self.lmmodel.transformer.wte(x[:,1:self.n_ctx-1])
@@ -787,17 +753,37 @@ class PlotMachinesModel(nn.Module):
         return self._forward(*args, log=log, returnlast=returnlast)
 
     def sample(self, *args, classify_idx=None, text_encoder=None, gen_len=401, k=0, p=0, decoding_strategy=0, min_len=None, eos_idx=None, returnnewmem = False):
-        XMB, mask, mem, mmask, prev, pmask,pvect, seen_unigrams, idxes = args
+        XMB, mask, mem, mmask, prev, pmask, pvect, seen_unigrams, idxes = args
         mem, mmask = self.updatememory(XMB, mem, mmask, prev, pmask)
-
+        
+        XMB = XMB.to(self.device)
+        mask = mask.to(self.device)
+        mmask = mmask.to(self.device)        
+        mem = mem.to(self.device)
+        pvect = pvect.to(self.device)
+        seen_unigrams = seen_unigrams.to(self.device)
+        
+        # print(XMB.device)
+        # print(mask.device)
+        # print(mmask.device)        
+        # print(mem.device)
+        # print(pvect.device)
+        # print(seen_unigrams.device)            
+        # print(idxes.device)
+        
         pasts = None
-        for _ in range(gen_len):
-             
+        for i in range(gen_len):
+        
+            print(i, "token")
+            
+            
             fargs =(XMB, mask[:, :XMB.size(-1)], mem, mmask, None, None, pvect)
             lm_logits = self._forward(*fargs) # past=pasts, returnpasts=True)
+            
+            
             lm_logits[:,-1, :] =  lm_logits[:,-1,:] / seen_unigrams
             pem = copy.deepcopy(self.pos_emb_mask)
-            if _ < min_len:
+            if i < min_len:
                 pem[:,:,eos_idx] = -1e12
 
 
