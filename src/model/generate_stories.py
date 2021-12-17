@@ -9,12 +9,12 @@ from tqdm import tqdm
 import gc
 
 
-# from eval_utils import format_text
-# from data_loader import get_paragraph_input_loader, get_fullstory_loader
-# from model import GPT2BaseModel, PlotMachinesModel
-# from generate_utils import toks_to_str
-# from parallel import DataParallelModel, DataParallelCriterion
-# from transformers import *
+from eval_utils import format_text
+from data_loader import get_paragraph_input_loader, get_fullstory_loader
+from model import GPT2BaseModel, PlotMachinesModel
+from generate_utils import toks_to_str
+from parallel import DataParallelModel, DataParallelCriterion
+from transformers import GPT2Tokenizer, GPT2Model
 
 def clear_memory(args):
   print("Clear memory for num objects:", len(args))
@@ -46,11 +46,11 @@ def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
     return total.detach().cpu()
 
 '''Generate a single paragraph'''
-def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, decoding_strategy, ids, tagnum, min_len=None, returnnewmem=False):
+def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, ids, tagnum, min_len=None, returnnewmem=False):
     src_strs, tgt_strs, gen_strs, genraw, gentok = [], [], [], [], []
     n_gpu = torch.cuda.device_count()
     
-    outputs = model(*args, text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, decoding_strategy=decoding_strategy, generate=True, min_len=min_len)
+    outputs = model(*args, text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, generate=True, min_len=min_len)
     if n_gpu == 1:
         outputs = [outputs]
     i = 0
@@ -81,7 +81,7 @@ def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, d
 
 
 '''Generate full stories'''
-def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, decoding_strategy, save_file, gen_dir="gen", tgt_dir="tgt", max_len=110, stop_words=[], args=None, tags=['_i_','_b_','_b_','_b_','_c_'], dim=768, localfile=None, save_dir=None):
+def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, save_file, gen_dir="gen", tgt_dir="tgt", max_len=110, stop_words=[], args=None, tags=['_i_','_b_','_b_','_b_','_c_'], dim=768, localfile=None, save_dir=None):
     def dump_to_file(jsf, data):
         for i in range(len(data)):
             try:
@@ -128,7 +128,7 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
                     if args.use_discourse:
                         pad_seq [:,args.n_ctx-1] = text_encoder.added_tokens_encoder[tag] #add discourse marker
                     modelargs = (pad_seq, mask_seq, mem, mmask, ph, pmask, prevprc, seenunigrams, idces)
-                    gen_strs, genraw, gentok, seenunigrams = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, decoding_strategy, docids, tnum, min_len=args.min_len)
+                    gen_strs, genraw, gentok, seenunigrams = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, docids, tnum, min_len=args.min_len)
                     prevprc = tfmclassifier(genraw, gptmodel, gpttok,gen_len)
                     ph[:, tnum, 0, :] = prevprc
                     pmask[:, tnum, 0] = 1
@@ -140,7 +140,7 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
                     if args.use_discourse:
                         pad_seq[:,args.n_ctx-1] =  text_encoder.added_tokens_encoder[tag] # add discourse marker
                     modelargs = (pad_seq, mask_seq, prevprc, seenunigrams, idces)
-                    gen_strs, genraw, gentok, seenunigrams  = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, decoding_strategy, docids, tnum, min_len=args.min_len)
+                    gen_strs, genraw, gentok, seenunigrams  = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, docids, tnum, min_len=args.min_len)
                 data["gen"].extend(gen_strs)
                 prev = genraw
 
@@ -179,7 +179,6 @@ def main(args):
     n_ctx = args.n_ctx
     gen_len = args.gen_len
     k = args.k
-    decoding_strategy = args.decoding_strategy
     accum_iter = args.accum_iter
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
@@ -187,10 +186,8 @@ def main(args):
     data_dir = args.data_dir
     #Text Encoder
 
-    if args.debug_mode:
-        text_encoder = GPT2Tokenizer.from_pretrained('gpt2')
-    else:
-        text_encoder = GPT2Tokenizer.from_pretrained('gpt2-medium')
+    text_encoder = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
+
     text_encoder.add_special_tokens({'bos_token':'_start_',
                                      'cls_token':'_classify_',
                                      'eos_token':'_end_',
@@ -215,21 +212,11 @@ def main(args):
         doc_model = DataParallelModel(doc_model)
 
 
-    if args.debug_mode:
-        gptclf = GPT2Model.from_pretrained('gpt2')
-        gptclf.eval()
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        gptclf.to(device)
-        #gpttok = gptTokenizer.from_pretrained('openai-gpt')
-        gpttok = GPT2Tokenizer.from_pretrained('gpt2')
-
-    else:
-        gptclf = GPT2Model.from_pretrained('gpt2-medium')
-        gptclf.eval()
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        gptclf.to(device)
-        #gpttok = gptTokenizer.from_pretrained('openai-gpt')
-        gpttok = GPT2Tokenizer.from_pretrained('gpt2-medium')
+    gptclf = GPT2Model.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
+    gptclf.eval()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    gptclf.to(device)
+    gpttok = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2",add_prefix_space=True)
 
     prevloss = []
     upd = []
@@ -252,7 +239,7 @@ def main(args):
     print("Parallelized")
     tagset = ['_i_'] + args.bodynum* ['_b_'] + ['_c_']
     vort = 'test' if args.testset else 'val'
-    generatedocs(doc_model, gptclf, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, args.decoding_strategy, os.path.join(args.save_dir,vort+'.gens.tsv'),
+    generatedocs(doc_model, gptclf, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, os.path.join(args.save_dir,vort+'.gens.tsv'),
                  'gen','tgt', gen_len, [], args, tags = tagset, dim=args.n_embd, save_dir=args.save_dir, localfile=os.path.join('/tmp',vort+'.gens.tsv'))
 
     print('done decoding....')
@@ -294,7 +281,6 @@ if __name__ == "__main__":
     parser.add_argument('--beam', type=int, default=0)
     parser.add_argument('--k', type=int, default=0)
     parser.add_argument('--p', type=int, default=0)
-    parser.add_argument('--decoding_strategy', type=int, default=0)
     parser.add_argument('--accum_iter', type=int, default=2)
     parser.add_argument('--gen_len', type=int, default=922)
     parser.add_argument('--n_ctx', type=int, default=102)
@@ -307,9 +293,8 @@ if __name__ == "__main__":
     parser.add_argument('--use_model', type=str, choices=['base', 'plotmachines'])
     parser.add_argument('--use_neighbor_feat', action='store_true')
     parser.add_argument('--use_discourse', action='store_true')
-    parser.add_argument('--debug_mode', action='store_true')
-        #--bodynum determines format of discourse template for output 
-        #(for five paragraph format, use 3, because intro and conclusion will be added automatically)
+    #--bodynum determines format of discourse template for output 
+    #(for five paragraph format, use 3, because intro and conclusion will be added automatically)
     parser.add_argument('--bodynum', type=int, default=3, help='The number of body pargraphs to use in generation')
 
 

@@ -1,7 +1,7 @@
 import pandas as pd
 from src.model.generate_stories import tfmclassifier
 import pickle
-from transformers import AutoTokenizer, AutoModelWithLMHead
+from transformers import GPT2Model, GPT2Tokenizer
 import argparse
 import torch
 
@@ -11,8 +11,8 @@ def encode_pars(input_file: str, model: str, device: str, gen_len=922):
     df['[PREVIOUS_PARAGRAPH]'].fillna('NA', inplace=True)
     prevpars = df['[PREVIOUS_PARAGRAPH]'].to_list()
     
-    tokenizer = AutoTokenizer.from_pretrained(model)
-    model = AutoModelWithLMHead.from_pretrained(model, output_hidden_states=True)
+    tokenizer = GPT2Tokenizer.from_pretrained(model)
+    model = GPT2Model.from_pretrained(model, output_hidden_states=True)
 
     output = [(0,0,0)]
     for i, par in enumerate(prevpars, start=1):    

@@ -53,14 +53,14 @@ def get_average_scores(jsonfile, srcs,hyps, refs,maxlen=110, stop_words=[]):
 
 
 
-def evaluate_doc_model(model, val_loader, text_encoder, device, beam, gen_len, k, p, decoding_strategy, save_file, gen_dir="gen", tgt_dir="tgt", max_len=110, stop_words=[], args=None):
+def evaluate_doc_model(model, val_loader, text_encoder, device, beam, gen_len, k, p, save_file, gen_dir="gen", tgt_dir="tgt", max_len=110, stop_words=[], args=None):
     data = {"src": [], "gen": [], "tgt": []}
     srcs, hyps, refs = [], [], []
     model.eval()
     for batchargs in tqdm(val_loader):
         with torch.no_grad():
             # Generating outputs for evaluation
-            src_strs, tgt_strs, gen_strs = generate_paragraph(model, batchargs, text_encoder, device, beam, gen_len, k, p, decoding_strategy, min_len=args.min_len)
+            src_strs, tgt_strs, gen_strs = generate_paragraph(model, batchargs, text_encoder, device, beam, gen_len, k, p, min_len=args.min_len)
             data["src"].extend(src_strs)
             data["gen"].extend(gen_strs)
             data["tgt"].extend(tgt_strs)

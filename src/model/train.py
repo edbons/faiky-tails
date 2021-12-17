@@ -10,31 +10,35 @@ from tqdm import tqdm
 import math
 
 from data_loader import get_paragraph_input_loader, get_paragraph_memory_input_loader
-from eval_utils import format_text, evaluate_doc_model, model_memory
+from eval_utils import evaluate_doc_model
 from generate_utils import generate_paragraph
 from model import GPT2BaseModel, PlotMachinesModel
 from logger import Logger
 from loss import ParagraphLoss
 from parallel import DataParallelModel, DataParallelCriterion
-# from transformers import *
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, AutoTokenizer, AutoModel, AutoModelWithLMHead
+from transformers import GPT2Tokenizer
 from transformers import AdamW
 
 
-def get_average_scores(hyps, refs, maxlen=400, stop_words=[]):       
-    rouge_scorer = rouge.Rouge()
-    averaged_scores = {'rouge-1': {'f': 0, 'p': 0, 'r': 0},
-                       'rouge-2': {'f': 0, 'p': 0, 'r': 0},
-                       'rouge-l': {'f': 0, 'p': 0, 'r': 0}}
+# def get_average_scores(hyps, refs, maxlen=400, stop_words=[]):       
+#     rouge_scorer = rouge.Rouge()
+#     averaged_scores = {'rouge-1': {'f': 0, 'p': 0, 'r': 0},
+#                        'rouge-2': {'f': 0, 'p': 0, 'r': 0},
+#                        'rouge-l': {'f': 0, 'p': 0, 'r': 0}}
 
-    scores = rouge_scorer.get_scores(hyps, refs)
-    for metric in averaged_scores.keys():
-        for values in scores:
-            for sub_metric in averaged_scores[metric]:
-                averaged_scores[metric][sub_metric] += values[metric][sub_metric]
-    for key in averaged_scores.keys():
-        for sub_key in averaged_scores[key].keys():
-            averaged_scores[key][sub_key] /= len(hyps)
+#     scores = rouge_scorer.get_scores(hyps, refs)
+#     for metric in averaged_scores.keys():
+#         for values in scores:
+#             for sub_metric in averaged_scores[metric]:
+#                 averaged_scores[metric][sub_metric] += values[metric][sub_metric]
+#     for key in averaged_scores.keys():
+#         for sub_key in averaged_scores[key].keys():
+#             averaged_scores[key][sub_key] /= len(hyps)
+#     return averaged_scores
+
+def get_average_scores(hyps, refs):       
+    rouge_scorer = rouge.Rouge()
+    averaged_scores = rouge_scorer.get_scores(hyps, refs, avg=True)
     return averaged_scores
 
 def run_batch(model, args, device, compute_loss_fct):
@@ -93,7 +97,7 @@ def load_checkpoint(checkpoint_file, model, model_opt):
     return start_iter, running_loss
 
 
-def evaluate(val_loader, train_log_interval, model, text_encoder, device, beam, gen_len, k,p, decoding_strategy, compute_loss_fct, min_len=10, show_progress=True):
+def evaluate(val_loader, model, text_encoder, device, beam, gen_len, k,p, compute_loss_fct, min_len=10, show_progress=True):
     hyps, refs = [], []
     val_loss = 0
     
@@ -104,23 +108,25 @@ def evaluate(val_loader, train_log_interval, model, text_encoder, device, beam, 
     
     for j, args in enumerate(eval_bar):
         with torch.no_grad():
-            if j <= 5:
+            if j <= 4:
                 #evaluate Rouge on a very small subset of dev examples just to double check that training is working
                 model.eval()
                 # Generating outputs for evaluation
-                src_strs, new_refs, new_hyps = generate_paragraph(model, args, text_encoder, device, beam, gen_len, k,p, decoding_strategy, min_len=min_len)
+                src_strs, new_refs, new_hyps = generate_paragraph(model, args, text_encoder, device, beam, gen_len, k,p, min_len=min_len)
                 hyps.extend(new_hyps)
                 refs.extend(new_refs)
             # Calculating loss
             l = run_batch(model, args, device, compute_loss_fct)
             val_loss += float(l.item())
     try:
+        print('Context: {}'.format(src_strs[0]))
         print('Hypothesis: {}'.format(hyps[0]))
         print("Reference: {}".format(refs[0]))
     except:
         pass
-    scores = get_average_scores(hyps, refs, maxlen=gen_len)
-#     scores = None
+    # scores = get_average_scores(hyps, refs, maxlen=gen_len)
+    scores = get_average_scores(hyps, refs)
+
     return val_loss, scores
 
 def get_loss_value(num, denom):
@@ -140,17 +146,16 @@ model_opt: the argparse options
 train_loader, val_loader: training and validation data loaders
 train_log_interval,val_log_interval: how often to log training and validation losses
 device: cuda or cpu
-beam, gen_len, k, p, decoding_strategy: decoding parameters 
+beam, gen_len, k, p: decoding parameters 
 accum_iter: how often to run backprop
 desc_str: string for showing progress, 
 save_dir: where to save checkpoints, 
 logger: class for logging progress (mostly for debugging), 
 text_encoder: the tokenizer, 
 show_progress=False: whether to log progress to the command line 
-summary_loss=None: not in use anymore
 my_local_dir='checkpoints_local': a local checkpoint storage if running on servers
 '''
-def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model_opt, train_loader, val_loader, train_log_interval, val_log_interval, device, beam, gen_len, k,p, decoding_strategy, accum_iter, desc_str, save_dir, logger, text_encoder, show_progress=False, summary_loss=None, my_local_dir='checkpoints_local'):
+def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model_opt, train_loader, val_loader, train_log_interval, val_log_interval, device, beam, gen_len, k, p, accum_iter, desc_str, save_dir, logger, text_encoder, show_progress=False, my_local_dir='checkpoints_local'):
     '''
     Run a single epoch, log results, and save best checkpoint
     '''
@@ -180,8 +185,8 @@ def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model
             print("training loss %.2f" % (running_loss/float(train_log_interval * accum_iter)))
             running_loss = 0
 
-        if num_updates % 1000 == 0 and i % accum_iter == 0:
-            val_loss, scores = evaluate(val_loader, train_log_interval, model, text_encoder, device, beam, gen_len, k, p, decoding_strategy, compute_loss_fct, min_len=args.min_len)
+        if num_updates % val_log_interval == 0 and i % accum_iter == 0:
+            val_loss, _ = evaluate(val_loader, model, text_encoder, device, beam, gen_len, k, p, compute_loss_fct, min_len=args.min_len)
 
             logger.scalar_summary("Validation", num=val_loss, denom=len(val_loader), step=num_updates)
             # if sum(val_loss) < bestloss or bestloss == -1:
@@ -191,7 +196,7 @@ def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model
                 save_checkpoint(i + 1, running_loss, model.state_dict(), model_opt.state_dict(), save_dir, my_local_dir)
 
 
-    val_loss, scores = evaluate(val_loader, train_log_interval, model, text_encoder, device, beam, gen_len, k, p, decoding_strategy, compute_loss_fct, min_len=args.min_len)
+    val_loss, scores = evaluate(val_loader, model, text_encoder, device, beam, gen_len, k, p, compute_loss_fct, min_len=args.min_len)
     for key, value in scores.items():
         for key2, value2 in value.items():
             logger.rouge_summary("{}/{}".format(key, key2), value2, num_updates)
@@ -243,7 +248,6 @@ def main(args):
     n_ctx = args.n_ctx
     gen_len = args.gen_len
     k = args.k
-    decoding_strategy = args.decoding_strategy
     accum_iter = args.accum_iter
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
@@ -251,7 +255,7 @@ def main(args):
     logger = Logger(log_dir)
 
     
-    text_encoder = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True) # , add_prefix_space=True
+    text_encoder = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True) # , add_prefix_space=True
 
     text_encoder.add_special_tokens({'bos_token':'_start_',
                                      'cls_token':'_classify_',
@@ -266,37 +270,34 @@ def main(args):
         train_loader = get_paragraph_input_loader(os.path.join(data_dir, "test_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=2, shuffle=True, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse, 
                                                     include_neigh= args.use_neighbor_feat, max_size=args.max_ex,
-                                                    include_kw = not args.exclude_kw, dim=args.n_embd, debug_mode=args.debug_mode)
+                                                    include_kw = not args.exclude_kw, dim=args.n_embd)
 
         val_loader = get_paragraph_input_loader(os.path.join(data_dir, "val_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=1, shuffle=False, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh=args.use_neighbor_feat, max_size=args.num_val_examples,
-                                                    include_kw = not args.exclude_kw, dim=args.n_embd, debug_mode=args.debug_mode)
+                                                    include_kw = not args.exclude_kw, dim=args.n_embd)
 
         print("Train length: {}, Validation length: {}".format(len(train_loader), len(val_loader)))
-        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, use_offline_gpt2 = args.use_offline_gpt2, device=device)
+        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
 
     elif args.use_model == "plotmachines":
 
         train_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "test_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=1, shuffle=True, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh= args.use_neighbor_feat, max_size = args.max_ex,
-                                                    include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True, debug_mode=args.debug_mode)
+                                                    include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True)
 
         val_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "val_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=0, shuffle=False, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh= args.use_neighbor_feat, max_size = args.num_val_examples,
-                                                    include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True, debug_mode=args.debug_mode)
+                                                    include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True)
 
         print("Train length: {}, Validation length: {}".format(len(train_loader), len(val_loader)))
-        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, use_offline_gpt2 = args.use_offline_gpt2, device=device)
+        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
     
 
-
-    n_updates_total = (len(train_loader) // args.accum_iter) * (args.num_epochs)
-
-    if args.debug_mode:
-        print_model_params(log_dir, doc_model)
+    
+    # n_updates_total = (len(train_loader) // args.accum_iter) * (args.num_epochs)
 
     criterion = nn.CrossEntropyLoss(reduction="none")
 
@@ -322,7 +323,7 @@ def main(args):
 
     start_iter, running_loss = load_checkpoint(args.checkpoint, doc_model, model_opt)
     for i in range(args.num_epochs):
-        start_iter, running_loss, bestloss, updates, val_loss1 = run_epoch(bestloss, start_iter, running_loss, doc_model, lm_loss, model_opt, train_loader, val_loader, train_log_interval, val_log_interval, device, beam, gen_len, k, p, decoding_strategy, accum_iter, "FT Training Epoch [{}/{}]".format(i + 1, args.num_epochs), save_dir, logger, text_encoder, show_progress=args.show_progress, my_local_dir=save_dir_local)
+        start_iter, running_loss, bestloss, updates, val_loss1 = run_epoch(bestloss, start_iter, running_loss, doc_model, lm_loss, model_opt, train_loader, val_loader, train_log_interval, val_log_interval, device, beam, gen_len, k, p, accum_iter, "FT Training Epoch [{}/{}]".format(i + 1, args.num_epochs), save_dir, logger, text_encoder, show_progress=args.show_progress, my_local_dir=save_dir_local)
         print("VAL LOSS: ", str(val_loss1))
         if val_loss1 > prevloss or math.isnan(val_loss1):
             break
@@ -338,9 +339,7 @@ def main(args):
     if state_dict.get('module.pos_emb_mask') is None and  doc_model.state_dict().get('module.pos_emb_mask') is not None:
         state_dict['module.pos_emb_mask'] = doc_model.state_dict().get('module.pos_emb_mask') 
     doc_model.load_state_dict(state_dict)
-    evaluate_doc_model(doc_model, val_loader, text_encoder, device, beam, gen_len, k, p, args.decoding_strategy, os.path.join(save_dir,'valeval.log'), 'gen','tgt', gen_len, [], args)
-
-
+    evaluate_doc_model(doc_model, val_loader, text_encoder, device, beam, gen_len, k, p, os.path.join(save_dir,'valeval.log'), 'gen','tgt', gen_len, [], args)
 
 
 if __name__ == "__main__":
@@ -377,13 +376,12 @@ if __name__ == "__main__":
     parser.add_argument('--experiment_name', type=str, required=True, help='name of this experiment will be included in output')
     parser.add_argument('--data_dir', type=str, default='data', help='directory with train, dev, test files')
     parser.add_argument('--train_log_interval', type=int, default=100, help='number of train steps before logging training progress')
-    parser.add_argument('--val_log_interval', type=int, default=2000, help='number of train steps before logging validation progress')
+    parser.add_argument('--val_log_interval', type=int, default=1000, help='number of train steps before logging validation progress')
     parser.add_argument('--num_val_examples', type=int, default=None, help='max number of validation examples, or None:use all data')
     parser.add_argument('--beam', type=int, default=0, help='beam size for beam search - not in use')
     parser.add_argument('--k', type=int, default=0, help='k for TopK sampling')
     parser.add_argument('--p', type=int, default=0, help='p for Nucleus sampling')
-    parser.add_argument('--decoding_strategy', type=int, default=0, help='not in use')
-    parser.add_argument('--accum_iter', type=int, default=2, help='number of batches to accumulate gradiencts before doing backprop')
+    parser.add_argument('--accum_iter', type=int, default=2, help='number of batches to accumulate gradients before doing backprop')
     parser.add_argument('--gen_len', type=int, default=922, help='max generation length + 1 for end token')
     parser.add_argument('--n_ctx', type=int, default=102, help='max outline length + 2 for delimiters')
     parser.add_argument('--show_progress', action='store_true')
@@ -395,9 +393,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_model', type=str, choices=['base', 'plotmachines'], help='full plotmachines (w/ memory) vs base gpt (no memory)')
     parser.add_argument('--use_neighbor_feat', action='store_true', help='use neighboring (previous) paragraph encoding as extra input')
     parser.add_argument('--use_discourse', action='store_true', help='use discouse tokens as extra input')
-    parser.add_argument('--use_offline_gpt2', action='store_true')
     parser.add_argument('--checkpoint', type=str, default=None, help='location of a previous checkpoint')
-    parser.add_argument('--debug_mode', action='store_true')
 
     args = parser.parse_args()
     print(torch.__version__)

@@ -14,15 +14,14 @@ optionally include discourse tag delimiter (include_discourse_type)
 '''
 class ParagraphDataset(Dataset):
     def __init__(self, data_file, encoder, max_size=None, n_ctx=102, n_gen=401, include_neigh=False,
-                 include_discourse_type=True, include_kw=True, dim=0 ,debug_mode=False):
+                 include_discourse_type=True, include_kw=True, dim=0):
         with open(data_file, "rb") as f:
             self.data = f.readlines()
 
         if include_neigh:
             self.prev = []
-            fn = ".".join(data_file.split(".")[:-1]) + "_gpt2.pkl"
-            if debug_mode:
-                fn = ".".join(data_file.split(".")[:-1]) + "_gpt.pkl"
+            fn = ".".join(data_file.split(".")[:-1]) + ".pkl"
+
             with open(fn, 'rb') as fp:
                 for k in range(len(self.data)):
                     temp = pickle.load(fp)
@@ -69,6 +68,7 @@ class ParagraphDataset(Dataset):
         cstart = torch.LongTensor([self.encoder.convert_tokens_to_ids('_c_')])
         keytok = torch.LongTensor([self.encoder.convert_tokens_to_ids('_kw_')])
         endkeytok = torch.LongTensor([self.encoder.convert_tokens_to_ids('_endkw_')])
+        
         if self.include_discourse_type:
             starttyptok = bstart
             if int(csv_data[0].split("_")[-1]) == 0:
@@ -124,14 +124,13 @@ include_neigh: whether to return the neighboring (previous) paragraph encoding
 include_discourse_type: whether to use special discouse tokens
 include_kw: unused, if I want to ignore the context
 dim: the dimension of the neighboring (previous) paragraph vectors (should be same as the PlotMachines embeddings)
-debug_mode: make a toy dataset for debugging
 '''
 def get_paragraph_input_loader(data_file, batch_size, encoder, shuffle=True, num_workers=0, max_size=None, n_ctx=102,
                                gen_len=401, include_neigh=False, include_discourse_type=True, include_kw=True,
-                               dim=768, debug_mode=False):
+                               dim=768):
     dataset = ParagraphDataset(data_file, encoder, max_size=max_size, n_ctx=n_ctx, n_gen=gen_len,
                                include_neigh=include_neigh,include_discourse_type=include_discourse_type, 
-                               include_kw=include_kw, dim=dim,debug_mode=debug_mode)
+                               include_kw=include_kw, dim=dim)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=True)
 
 
@@ -232,7 +231,7 @@ optionally include discourse tag delimiter (include_discourse_type)
 '''
 class ParagraphWithMemoryDataset(Dataset):
     def __init__(self, data_file, encoder, max_size=None, n_ctx=102, n_gen=401, include_discourse_type=True,
-                 include_kw=True, memsize=10, dim=768, use_kwmem=False, debug_mode=False):
+                 include_kw=True, memsize=10, dim=768, use_kwmem=False):
 
         def isClean(line):
             chunks = line.decode('utf-8', 'ignore').strip().split('\t')
@@ -253,11 +252,8 @@ class ParagraphWithMemoryDataset(Dataset):
 
         self.prevmat = []
 
-        # fn = ".".join(data_file.split(".")[:-1]) + "_gpt2.pkl"
         fn = ".".join(data_file.split(".")[:-1]) + ".pkl"
 
-        # if debug_mode:
-        #     fn = ".".join(data_file.split(".")[:-1]) + "_gpt.pkl"
         with open(fn, 'rb') as fp:
             temp = pickle.load(fp)
             for k in range(len(self.data)):
@@ -340,7 +336,7 @@ class ParagraphWithMemoryDataset(Dataset):
                 starttyptok = cstart
         else:
             starttyptok = clstok
-
+        
         pad_output = torch.zeros(self.ctx + self.gen + 3).long()
         mask_output = torch.zeros(self.ctx + self.gen + 3).long()
 
@@ -412,12 +408,11 @@ include_kw: unused, if I want to ignore the context
 memsize: the total number of memory slots (aside from the keyword slots)
 dim: the dimension of the memory slot vectors (should be same as the PlotMachines embeddings)
 use_kwmem: use keyword-based memory slots in the memory
-debug_mode: make a toy dataset for debugging
 '''
 def get_paragraph_memory_input_loader(data_file, batch_size, encoder, shuffle=True, num_workers=0, max_size=None,
                                        n_ctx=102, gen_len=401, include_neigh=False, include_discourse_type=True,
-                                       include_kw=True, memsize=10, dim=768, use_kwmem=False, debug_mode=False):
+                                       include_kw=True, memsize=10, dim=768, use_kwmem=False):
     dataset = ParagraphWithMemoryDataset(data_file, encoder, max_size=max_size, n_ctx=n_ctx, n_gen=gen_len,
                                           include_discourse_type=include_discourse_type, include_kw=include_kw,
-                                          memsize=memsize, dim=dim, use_kwmem=use_kwmem, debug_mode=debug_mode)
+                                          memsize=memsize, dim=dim, use_kwmem=use_kwmem)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=True)

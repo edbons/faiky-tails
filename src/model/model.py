@@ -4,22 +4,18 @@ import torch.nn.functional as F
 import math
 import copy
 
-# from transformers.modeling_gpt2 import *
 from transformers.modeling_gpt2 import Attention, MLP
 from transformers import AdamW
 from transformers import  GPT2Model, GPT2LMHeadModel
 # from transformers.models.gpt2.modeling_gpt2 import GPT2Attention, GPT2MLP 
+from tqdm import tqdm
+
 from transformers.modeling_utils import (
     Conv1D,
     prune_conv1d_layer
 )
 
-from eval_utils import model_memory
-
-
 from torch.nn import CrossEntropyLoss
-
-from generate_stories import clear_memory
 
 class GPT2NeighborModel(GPT2Model):
     '''GPT2 model but with slightly altered forward function to include previous paragraph encoding as an additional input'''
@@ -183,23 +179,16 @@ class GPT2BaseModel(nn.Module):
     gen_len: total generation length including end tokens
     includeprev: use the neighboring (previous) paragraph in input
     lastidx: eos index in tokenizer
-    use_offline_gpt2: true if we've already downloaded from huggingface to server
     '''
-    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0, use_offline_gpt2=False, device=None):
+    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0, device=None):
         ###ctx: [<h_prev>/<start> kw<=100 _<i/b/c/t> ] gen<=400 <end> == 503
         #LM mask:[0x101][1x401] 0 - padded
         super(GPT2BaseModel,self).__init__()
 
-        # if use_offline_gpt2:
-        #     self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('./gpt2model', n_ctx=n_ctx+gen_len, n_positions=n_ctx+gen_len)
-        # elif cfg.debug_mode:
-        #     self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2', n_ctx=n_ctx + gen_len,
-        #                                                         n_positions=n_ctx + gen_len)
-        # else:
-        #     self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2-medium', n_ctx=n_ctx + gen_len,
-        #                                                         n_positions=n_ctx + gen_len)
+        #self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2', n_ctx=n_ctx + gen_len, n_positions=n_ctx + gen_len)
+
         self.device = device
-        self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
+        self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", output_attentions=cfg.output_attentions)  # n_positions=n_ctx + gen_len, 
         self.lmmodel.to(self.device)
 
         
@@ -248,22 +237,22 @@ class GPT2BaseModel(nn.Module):
 
     text_encoder: tokenizer
     device: cpu, cuda
-    beam, decoding_strategy, log: old params for compatability that are not in use
+    beam, log: old params for compatability that are not in use
     k: if using top k sampling
     p: if using nucleus sampling
     gen_len: maximum length for decoding
     min_len: minimum length for decoding
     returnlast: training parameter - return the last token hidden state (this is not in use in the latest codebase)
     '''
-    def forward(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, decoding_strategy=0, log=False, generate=False, min_len=None, returnlast=False, returnnewmem=False):
+    def forward(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, log=False, generate=False, min_len=None, returnlast=False, returnnewmem=False):
         if generate:
-            return self.generate(*args,text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, decoding_strategy=decoding_strategy, min_len=min_len)
+            return self.generate(*args,text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, min_len=min_len)
         return self._forward(*args, log=log, returnlast=returnlast)
 
-    def sample(self, *args, classify_idx=0, text_encoder=None, gen_len=401, k=0, p=0, decoding_strategy=0, min_len=None, eos_idx=None):
+    def sample(self, *args, classify_idx=0, text_encoder=None, gen_len=401, k=0, p=0, min_len=None, eos_idx=None):
         XMB, mask, prev, seen_unigrams, idxes = args
         pasts = None
-        for _ in range(gen_len):
+        for _ in tqdm(range(gen_len)):
             lm_logits = self._forward(XMB, mask[:, :XMB.size(-1)], prev)
             pem = copy.deepcopy(self.pos_emb_mask)
             if _ < min_len:
@@ -283,8 +272,8 @@ class GPT2BaseModel(nn.Module):
                     next_idx = indices.gather(-1, torch.multinomial(values, 1))
                 else:
                     # Nucleus Sampling
-                    indices = torch.argsort(dist,dim=1,descending=True)
-                    values = dist.gather(-1,indices)
+                    indices = torch.argsort(dist, dim=1, descending=True)
+                    values = dist.gather(-1, indices)
                     probsum = torch.cumsum(values,dim=1)
                     include = ~ ((probsum.gt(p*.01)) & ((probsum-values).gt(p*.01)))
                     newdist = torch.where(include, values, torch.zeros_like(values) + 1e-10)
@@ -297,7 +286,7 @@ class GPT2BaseModel(nn.Module):
     def append_batch(self, X, next_idx):
         return torch.cat((X, next_idx), 1)
 
-    def generate(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, decoding_strategy=0, min_len=None):
+    def generate(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, min_len=None):
         ##print(len(args))
         if len(args) == 5:
             pad_output, mask, prev, seen_trigrams, idxes = args
@@ -315,9 +304,10 @@ class GPT2BaseModel(nn.Module):
         pad_output = pad_output.to(device)
         XMB = pad_output[:, :self.n_ctx]
         if beam == 0:
-            generated_toks, seen = self.sample(XMB, mask, prev, seen_trigrams, idxes, classify_idx=classify_idx, text_encoder=text_encoder, gen_len=gen_len, k=k, p=p, decoding_strategy=decoding_strategy, min_len=min_len, eos_idx=eos_idx)
+            generated_toks, seen = self.sample(XMB, mask, prev, seen_trigrams, idxes, classify_idx=classify_idx, text_encoder=text_encoder, gen_len=gen_len, k=k, p=p, min_len=min_len, eos_idx=eos_idx)
         else:
             raise NotImplementedError
+
         output = generated_toks.type_as(XMB), input_toks.type_as(XMB), target_toks.type_as(XMB), seen
         return output
 
@@ -650,9 +640,8 @@ class PlotMachinesModel(nn.Module):
     gen_len: total generation length including end tokens
     includeprev: use the neighboring (previous) paragraph in input
     lastidx: eos index in tokenizer
-    use_offline_gpt2: true if we've already downloaded from huggingface to server
     '''
-    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,  use_offline_gpt2=False, device=None):
+    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,  device=None):
         ###ctx: [<h_prev>/<start> kw<=100 _<i/b/c/t> ] gen<=400 <end> == 503
         #LM mask:[0x101][1x401] 0 - padded
         super(PlotMachinesModel,self).__init__()
@@ -662,14 +651,10 @@ class PlotMachinesModel(nn.Module):
         self.device = device
 
         self.memupd = GatedMemoryUpdate(cfg, n_ctx-2+cfg.memstatesize)
-        # if use_offline_gpt2:
-        #     self.lmmodel = GPT2MemLMHeadModel.from_pretrained('./gpt2model', n_positions=n_ctx + gen_len)
-        # elif cfg.debug_mode:
-        #     self.lmmodel = GPT2MemLMHeadModel.from_pretrained('gpt2', n_positions=n_ctx + gen_len)
-        # else:
-        #     self.lmmodel = GPT2MemLMHeadModel.from_pretrained('gpt2-medium', n_positions=n_ctx + gen_len)
 
-        self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", n_positions=n_ctx + gen_len, output_attentions=cfg.output_attentions)
+        #self.lmmodel = GPT2MemLMHeadModel.from_pretrained('gpt2', n_positions=n_ctx + gen_len)
+
+        self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2",  output_attentions=cfg.output_attentions) # n_positions=n_ctx + gen_len,
         self.lmmodel.to(self.device)
 
         self.lmmodel.resize_token_embeddings(vocab)
@@ -751,21 +736,21 @@ class PlotMachinesModel(nn.Module):
 
     text_encoder: tokenizer
     device: cpu, cuda
-    beam, decoding_strategy, log: old params for compatability that are not in use
+    beam, log: old params for compatability that are not in use
     k: if using top k sampling
     p: if using nucleus sampling
     gen_len: maximum length for decoding
     min_len: minimum length for decoding
     returnlast: training parameter - return the last token hidden state (this is not in use in the latest codebase)
     '''
-    def forward(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, decoding_strategy=0, log=False, generate=False, min_len=None, returnlast=False, returnnewmem=False):
+    def forward(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, log=False, generate=False, min_len=None, returnlast=False, returnnewmem=False):
         if returnnewmem:
             return self.updatememory(*args)
         elif generate:
-            return self.generate(*args, text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, decoding_strategy=decoding_strategy, min_len=min_len, returnnewmem=returnnewmem)
+            return self.generate(*args, text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, min_len=min_len, returnnewmem=returnnewmem)
         return self._forward(*args, log=log, returnlast=returnlast)
 
-    def sample(self, *args, classify_idx=None, text_encoder=None, gen_len=401, k=0, p=0, decoding_strategy=0, min_len=None, eos_idx=None, returnnewmem = False):
+    def sample(self, *args, classify_idx=None, text_encoder=None, gen_len=401, k=0, p=0, min_len=None, eos_idx=None, returnnewmem = False):
         XMB, mask, mem, mmask, prev, pmask, pvect, seen_unigrams, idxes = args
         mem, mmask = self.updatememory(XMB, mem, mmask, prev, pmask)
         
@@ -774,21 +759,10 @@ class PlotMachinesModel(nn.Module):
         mmask = mmask.to(self.device)        
         mem = mem.to(self.device)
         pvect = pvect.to(self.device)
-        seen_unigrams = seen_unigrams.to(self.device)
-        
-        # print(XMB.device)
-        # print(mask.device)
-        # print(mmask.device)        
-        # print(mem.device)
-        # print(pvect.device)
-        # print(seen_unigrams.device)            
-        # print(idxes.device)
-        
+        seen_unigrams = seen_unigrams.to(self.device)               
         pasts = None
-        for i in range(gen_len):
         
-            print(i, "token")
-            
+        for i in range(gen_len):        
             
             fargs =(XMB, mask[:, :XMB.size(-1)], mem, mmask, None, None, pvect)
             lm_logits = self._forward(*fargs) # past=pasts, returnpasts=True)
@@ -838,7 +812,7 @@ class PlotMachinesModel(nn.Module):
     idxes: [B] - the doc ids
     note: S= ctx + gen_len even though the generation will be blank tokens before decoding
     '''
-    def generate(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, decoding_strategy=0, min_len=None, returnnewmem=False):
+    def generate(self, *args, text_encoder=None, device=None, beam=0, gen_len=401, k=0, p=0, min_len=None, returnnewmem=False):
         
         if len(args) == 9:
             pad_output, mask, mem, mmask, prev, pmask, xprev, seen_unigrams, idxes = args
@@ -856,7 +830,7 @@ class PlotMachinesModel(nn.Module):
         pad_output = pad_output.to(device)
         XMB = pad_output[:, :self.n_ctx]
         if beam == 0:
-            generated_toks, seen_unigrams = self.sample(XMB, mask, mem, mmask, prev, pmask, xprev, seen_unigrams, idxes, classify_idx=classify_idx, text_encoder=text_encoder, gen_len=gen_len, k=k, p=p, decoding_strategy=decoding_strategy, min_len=min_len, eos_idx=eos_idx, returnnewmem=returnnewmem)
+            generated_toks, seen_unigrams = self.sample(XMB, mask, mem, mmask, prev, pmask, xprev, seen_unigrams, idxes, classify_idx=classify_idx, text_encoder=text_encoder, gen_len=gen_len, k=k, p=p, min_len=min_len, eos_idx=eos_idx, returnnewmem=returnnewmem)
             return generated_toks.type_as(XMB), input_toks.type_as(XMB), target_toks.type_as(XMB), seen_unigrams
         else:
             raise NotImplementedError
