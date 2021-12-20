@@ -140,3 +140,4 @@ savedir
 checkpoints_local
 launch.json
 gpt3
+*.tsv

@@ -37,8 +37,10 @@ def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
     model.eval().to(device)
     outputs = model(wds)
 
-    # total = (mask.unsqueeze(2).type_as(outputs[0]) * outputs[0]).sum(dim=1) / mask.type_as(outputs[0]).sum(dim=1).unsqueeze(1)
-    total = (mask.unsqueeze(2).type_as(outputs['hidden_states'][0]) * outputs['hidden_states'][0]).sum(dim=1) / mask.type_as(outputs['hidden_states'][0]).sum(dim=1).unsqueeze(1)
+    total = (mask.unsqueeze(2).type_as(outputs[0]) * outputs[0]).sum(dim=1) / mask.type_as(outputs[0]).sum(dim=1).unsqueeze(1)
+
+    # FIX down code
+    # total = (mask.unsqueeze(2).type_as(outputs['hidden_states'][0]) * outputs['hidden_states'][0]).sum(dim=1) / mask.type_as(outputs['hidden_states'][0]).sum(dim=1).unsqueeze(1) 
     
     if device=='cuda':
         clear_memory([wds, mask])
@@ -101,12 +103,13 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
             os.remove(save_file)
     except:
         print("Error while deleting file ", save_file)
-    jsf = open(localfile, "w")
+    
+    jsf = open(localfile, "w", encoding='utf-8')
 
     for pad_seq, mask_seq, docids in tqdm(val_loader):
         with torch.no_grad():
             # Generating outputs for evaluation
-            prev= ['NA']*pad_seq.size(0)
+            prev= ['NA'] * pad_seq.size(0)
 
             kwsize = args.n_ctx-2
             mem = torch.torch.empty(pad_seq.size(0), kwsize + args.memstatesize, args.n_embd).normal_(std=0.02)
@@ -121,7 +124,7 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
 
 
             for tnum in range(len(tags)):
-                tag=  tags[tnum]
+                tag = tags[tnum]
                 if args.use_model =="plotmachines":
                     if args.use_neighbor_feat:
                         prevprc = tfmclassifier(prev, gptmodel, gpttok, gen_len)
@@ -138,16 +141,16 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
                     if args.use_neighbor_feat:
                         prevprc = tfmclassifier(prev, gptmodel, gpttok, gen_len)
                     if args.use_discourse:
-                        pad_seq[:,args.n_ctx-1] =  text_encoder.added_tokens_encoder[tag] # add discourse marker
+                        pad_seq[:,args.n_ctx-1] = text_encoder.added_tokens_encoder[tag] # add discourse marker
                     modelargs = (pad_seq, mask_seq, prevprc, seenunigrams, idces)
-                    gen_strs, genraw, gentok, seenunigrams  = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, docids, tnum, min_len=args.min_len)
+                    gen_strs, genraw, gentok, seenunigrams = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, docids, tnum, min_len=args.min_len)
                 data["gen"].extend(gen_strs)
                 prev = genraw
 
             if iter %100 == 0:
                 dump_to_file(jsf, data["gen"])
                 data = {'gen': []}
-            iter+=1
+            iter += 1
 
     dump_to_file(jsf, data["gen"])
 
@@ -179,7 +182,7 @@ def main(args):
     n_ctx = args.n_ctx
     gen_len = args.gen_len
     k = args.k
-    accum_iter = args.accum_iter
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     print("device", device, "n_gpu", n_gpu)
@@ -199,48 +202,51 @@ def main(args):
 
     datafile = os.path.join(data_dir, "test_encoded.csv") if args.testset else os.path.join(data_dir, "val_encoded.csv")
     print("Loading dataset...")
-    val_loader = get_fullstory_loader(datafile, args.n_batch, text_encoder, num_workers=0, shuffle=False, gen_len=gen_len, n_ctx=n_ctx, include_kw = not args.exclude_kw, max_size=args.max_ex)
+    val_loader = get_fullstory_loader(datafile, args.n_batch, text_encoder, num_workers=0, shuffle=False, gen_len=gen_len, n_ctx=n_ctx, include_kw = not args.exclude_kw, max_size=args.max_ex)    
     print(len(val_loader))
 
     if args.use_model == "plotmachines":
-        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat)
+        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
     else:
-        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat)
+        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
 
     doc_model.to(device)
     if n_gpu > 1:
         doc_model = DataParallelModel(doc_model)
 
 
-    gptclf = GPT2Model.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
+    gptclf = GPT2Model.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", output_hidden_states=True)
     gptclf.eval()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     gptclf.to(device)
-    gpttok = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2",add_prefix_space=True)
+    gpttok = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
 
-    prevloss = []
-    upd = []
-    start_iter, running_loss = 1,0
     load_dir = args.load_dir
     bestcheck = os.path.join(load_dir,"checkpoint_best.pt")
     checkpoint = torch.load(bestcheck, map_location='cpu')
     state_dict = checkpoint["state_dict"]
-    if n_gpu ==1:
-      if state_dict.get('module.pos_emb_mask') is None and doc_model.state_dict().get('pos_emb_mask') is not None:
-        state_dict['module.pos_emb_mask'] = doc_model.state_dict().get('pos_emb_mask')
-      for k in list(state_dict.keys()):
-        state_dict[k[7:]] = state_dict[k]
-        del state_dict[k]
-    else:
-      if state_dict.get('module.pos_emb_mask') is None and  doc_model.state_dict().get('module.pos_emb_mask') is not None:
+    
+    # if n_gpu <= 1:
+    #     if state_dict.get('module.pos_emb_mask') is None and doc_model.state_dict().get('pos_emb_mask') is not None:
+    #         state_dict['module.pos_emb_mask'] = doc_model.state_dict().get('pos_emb_mask')
+    #     for k in list(state_dict.keys()):
+    #         state_dict[k[7:]] = state_dict[k]
+    #         del state_dict[k]
+    # else:
+    #     if state_dict.get('module.pos_emb_mask') is None and  doc_model.state_dict().get('module.pos_emb_mask') is not None:
+    #         state_dict['module.pos_emb_mask'] = doc_model.state_dict().get('module.pos_emb_mask')
+    #     print("Parallelized")
+    
+    if state_dict.get('module.pos_emb_mask') is None and  doc_model.state_dict().get('module.pos_emb_mask') is not None:
         state_dict['module.pos_emb_mask'] = doc_model.state_dict().get('module.pos_emb_mask')
+
     doc_model.load_state_dict(state_dict)
 
-    print("Parallelized")
-    tagset = ['_i_'] + args.bodynum* ['_b_'] + ['_c_']
+    
+    tagset = ['_i_'] + args.bodynum * ['_b_'] + ['_c_']
     vort = 'test' if args.testset else 'val'
-    generatedocs(doc_model, gptclf, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, os.path.join(args.save_dir,vort+'.gens.tsv'),
-                 'gen','tgt', gen_len, [], args, tags = tagset, dim=args.n_embd, save_dir=args.save_dir, localfile=os.path.join('/tmp',vort+'.gens.tsv'))
+    generatedocs(doc_model, gptclf, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, os.path.join(args.save_dir, vort + '.gens.tsv'),
+                 'gen', 'tgt', gen_len, [], args, tags = tagset, dim=args.n_embd, save_dir=args.save_dir, localfile=os.path.join('.', vort + '.gens.tsv'))
 
     print('done decoding....')
 
@@ -257,7 +263,7 @@ if __name__ == "__main__":
     parser.add_argument('--max_grad_norm', type=int, default=1)
     parser.add_argument('--lr', type=float, default=6.25e-5)
     parser.add_argument('--lr_warmup', type=float, default=0.002)
-    parser.add_argument('--n_embd', type=int, default=1024)
+    parser.add_argument('--n_embd', type=int, default=768)
     parser.add_argument('--n_head', type=int, default=12)
     parser.add_argument('--n_layer', type=int, default=12)
     parser.add_argument('--embd_pdrop', type=float, default=0.1)
@@ -281,8 +287,7 @@ if __name__ == "__main__":
     parser.add_argument('--beam', type=int, default=0)
     parser.add_argument('--k', type=int, default=0)
     parser.add_argument('--p', type=int, default=0)
-    parser.add_argument('--accum_iter', type=int, default=2)
-    parser.add_argument('--gen_len', type=int, default=922)
+    parser.add_argument('--gen_len', type=int, default=402)
     parser.add_argument('--n_ctx', type=int, default=102)
     parser.add_argument('--min_len', type=int, default=100)
     parser.add_argument('--repeattheta', type=float, default=1.5)

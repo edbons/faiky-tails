@@ -1,15 +1,10 @@
-import argparse
-import csv
 import glob
 import json
 import os
-import random
-import re
+
 
 from nltk.tokenize import sent_tokenize
-import numpy as np
 import torch
-import torch.nn as nn
 import rouge
 from transformers import *
 
@@ -32,7 +27,7 @@ def format_text(text, max_len, stop_words=[]):
         text = " ".join(text.split(" ")[:max_len])
     return text.encode('ascii','ignore').decode("ascii","ignore")
 
-def get_average_scores(jsonfile, srcs,hyps, refs,maxlen=110, stop_words=[]):
+def get_average_scores(jsonfile, srcs, hyps, refs, maxlen=110, stop_words=[]):
     rouge_scorer = rouge.Rouge()
     averaged_scores = {'rouge-1': {'f': 0, 'p': 0, 'r': 0},
                        'rouge-2': {'f': 0, 'p': 0, 'r': 0},
@@ -47,7 +42,7 @@ def get_average_scores(jsonfile, srcs,hyps, refs,maxlen=110, stop_words=[]):
         for sub_key in averaged_scores[key].keys():
             averaged_scores[key][sub_key] /= len(hyps)
     for i in range(len(srcs)):
-        jsonfile.write(json.dumps({'r1': scores[i]['rouge-1'], 'r2': scores[i]['rouge-2'], 'rl': scores[i]['rouge-l'],'hyp':hyps[i], 'ref':refs[i],'src':srcs[i]})+"\n")
+        jsonfile.write(json.dumps({'r1': scores[i]['rouge-1'], 'r2': scores[i]['rouge-2'], 'rl': scores[i]['rouge-l'],'hyp':hyps[i], 'ref':refs[i],'src':srcs[i]}, ensure_ascii=False)+"\n")
     return averaged_scores
 
 
@@ -65,7 +60,7 @@ def evaluate_doc_model(model, val_loader, text_encoder, device, beam, gen_len, k
             data["gen"].extend(gen_strs)
             data["tgt"].extend(tgt_strs)
             
-    jsf = open(save_file+".output.json","w")
+    jsf = open(save_file + ".output.json", "w", encoding='utf-8')
     for i in range(min(len(data['src']),50)):
         print("*" * 50)
         try:
@@ -75,17 +70,11 @@ def evaluate_doc_model(model, val_loader, text_encoder, device, beam, gen_len, k
         except:
             pass
 
-    with open(save_file, "w") as f:
-        json.dump(
-            #get_rouge_scores(gen_dir, tgt_dir),
-            get_average_scores(jsf,data['src'],data['gen'],data['tgt'],max_len,stop_words),
+    with open(save_file, "w", encoding='utf-8') as f:
+        json.dump(    
+            get_average_scores(jsf, data['src'], data['gen'], data['tgt'], max_len, stop_words),
             f,
             indent=4,
-            sort_keys=True
+            sort_keys=True,
+            ensure_ascii=False
         )
-
-def model_memory(model):
-    mem_params = sum([param.nelement() * param.element_size() for param in model.parameters()])
-    mem_bufs = sum([buf.nelement() * buf.element_size() for buf in model.buffers()])
-    mem = mem_params + mem_bufs # in bytes
-    print(f"Model {type(model)} params size:", mem // 1024 // 1024, "mb")

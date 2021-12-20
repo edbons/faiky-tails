@@ -176,37 +176,5 @@ def tag_ud(text, modelfile='udpipe_syntagrus.model', keep_pos=True, keep_punct=F
 
 
 if __name__== "__main__":   
-    test = 'My (very) long, «sentence». No fucking! But: some shit;'
+    test = 'My (very) long, «sentence». No way! But: some thing good;'
     print(clean_text(test, keep_punct=True)) 
-    # stops = set(stopwords.words('russian'))
-    # print(stops)
-    
-    # modelfile = './udpipe_syntagrus.model'
-    # # if not os.path.exists(modelfile):
-    # #     udpipe_url = 'https://rusvectores.org/static/models/udpipe_syntagrus.model'
-    # #     modelfile = wget.download(udpipe_url)    
-
-    # root_path = 'C:\\Users\\edbon\\devproj\\faiky-tails\\dataset\\raw\\'
-    # corpus = []
-
-    # # for _, dirs, files in os.walk(root_path):
-    # #     for file in tqdm(files):
-    # #         with open(root_path + file, 'r', encoding='utf-8') as f:
-    # #             # print(f"Proccess file {file}...")
-    # #             doc = tag_ud(text=f.read(), modelfile=modelfile, keep_pos=True, keep_punct=False)
-    # #             # doc = preproccess_text(f.read())
-    # #         corpus.append(doc)
-    
-    # with open(root_path + '001 Арысь - поле.txt', 'r', encoding='utf-8') as f:
-    #     doc = tag_ud(text=f.read(), modelfile=modelfile, stop_words=stops, keep_pos=True, keep_punct=False)
-    # corpus.append(doc)
-
-    # print(len(corpus))
-    # print(corpus[0])
-
-    # corpus_file = "./dataset/corpus.txt"
-    # with open(corpus_file, "wb") as f:
-    #     pickle.dump(corpus, f)
-    
-    # with open(corpus_file, "rb") as f:   # Unpickling
-    #     corpus = pickle.load(f)

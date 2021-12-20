@@ -212,7 +212,7 @@ def run_epoch(bestloss, start_iter, running_loss, model, compute_loss_fct, model
     return i + 1, running_loss, bestloss, num_updates, lv
 
 def print_model_params(log_dir, doc_model):
-    fm = open(log_dir+"/modeldescr.txt","w")
+    fm = open(log_dir+"/modeldescr.txt", "w", encoding='utf-8')
     fm.write(str(doc_model))
     fm.close()
     print(sum(p.numel() for p in doc_model.parameters() if p.requires_grad))
@@ -267,7 +267,7 @@ def main(args):
 
     print("Loading dataset...")
     if args.use_model == "base":
-        train_loader = get_paragraph_input_loader(os.path.join(data_dir, "test_encoded.csv"), args.n_batch, text_encoder, 
+        train_loader = get_paragraph_input_loader(os.path.join(data_dir, "train_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=2, shuffle=True, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse, 
                                                     include_neigh= args.use_neighbor_feat, max_size=args.max_ex,
                                                     include_kw = not args.exclude_kw, dim=args.n_embd)
@@ -282,7 +282,7 @@ def main(args):
 
     elif args.use_model == "plotmachines":
 
-        train_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "test_encoded.csv"), args.n_batch, text_encoder, 
+        train_loader = get_paragraph_memory_input_loader(os.path.join(data_dir, "train_encoded.csv"), args.n_batch, text_encoder, 
                                                     num_workers=1, shuffle=True, gen_len=gen_len, n_ctx=n_ctx, include_discourse_type=args.use_discourse,
                                                     include_neigh= args.use_neighbor_feat, max_size = args.max_ex,
                                                     include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True)
