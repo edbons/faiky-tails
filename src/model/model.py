@@ -180,7 +180,7 @@ class GPT2BaseModel(nn.Module):
     includeprev: use the neighboring (previous) paragraph in input
     lastidx: eos index in tokenizer
     '''
-    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0, device=None):
+    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0, device=None, gpt_model=None):
         ###ctx: [<h_prev>/<start> kw<=100 _<i/b/c/t> ] gen<=400 <end> == 503
         #LM mask:[0x101][1x401] 0 - padded
         super(GPT2BaseModel,self).__init__()
@@ -188,7 +188,7 @@ class GPT2BaseModel(nn.Module):
         #self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained('gpt2', n_ctx=n_ctx + gen_len, n_positions=n_ctx + gen_len)
 
         self.device = device
-        self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", output_attentions=cfg.output_attentions)  # n_positions=n_ctx + gen_len, 
+        self.lmmodel = GPT2NeighborLMHeadModel.from_pretrained(gpt_model, output_attentions=cfg.output_attentions)  # n_positions=n_ctx + gen_len, 
         self.lmmodel.to(self.device)
 
         
@@ -641,7 +641,7 @@ class PlotMachinesModel(nn.Module):
     includeprev: use the neighboring (previous) paragraph in input
     lastidx: eos index in tokenizer
     '''
-    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,  device=None):
+    def __init__(self, cfg, vocab=40990, n_ctx=102, gen_len=401, return_probs=False, includeprev=False, lastidx=0,  device=None, gpt_model=None):
         ###ctx: [<h_prev>/<start> kw<=100 _<i/b/c/t> ] gen<=400 <end> == 503
         #LM mask:[0x101][1x401] 0 - padded
         super(PlotMachinesModel,self).__init__()
@@ -654,7 +654,7 @@ class PlotMachinesModel(nn.Module):
 
         #self.lmmodel = GPT2MemLMHeadModel.from_pretrained('gpt2', n_positions=n_ctx + gen_len)
 
-        self.lmmodel = GPT2MemLMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2",  output_attentions=cfg.output_attentions) # n_positions=n_ctx + gen_len,
+        self.lmmodel = GPT2MemLMHeadModel.from_pretrained(gpt_model,  output_attentions=cfg.output_attentions) # n_positions=n_ctx + gen_len,
         self.lmmodel.to(self.device)
 
         self.lmmodel.resize_token_embeddings(vocab)

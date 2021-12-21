@@ -28,18 +28,18 @@ def trim_body(body):
             first = True
 
             while len(sentences[s].split(' ')) < 4 or '::act ' in sentences[s].lower() or ' act:' in sentences[s].lower():
-                s+=1
+                s += 1
                 if s == len(sentences):
                     return None
             body_new.append('<o> ' + sentences[s].replace(' <s> ', ' ').strip())
-            s+=1
+            s += 1
 
-            while s < len(sentences) and len(body_new)< 5:
+            while s < len(sentences) and len(body_new) < 5:
                 body_new.append('<o>')
                 curr_len = 0
                 while s < len(sentences) and curr_len + len(sentences[s].split(' ')) < 400:
                     if ':act ' in sentences[s].lower() or 'act: ' in sentences[s].lower() :
-                        s+=1
+                        s += 1
                         break
 
                     if len(sentences[s]) > 10:
@@ -49,7 +49,7 @@ def trim_body(body):
                     s += 1
 
         else:
-            if par_length >5:
+            if par_length > 5:
                 s = 0
                 while s < len(sentences) and len(sentences[s]) > 10 and (len(body_new[len(body_new)-1].split(' ')) + len(sentences[s].split(' '))) < 400:
                     if len(sentences[s]) > 10:
@@ -60,7 +60,7 @@ def trim_body(body):
                 if len(temp_body) > 10 and len(temp_body.split(' ')) <= 400:
                     body_new.append(temp_body.replace(' <s>', ' ').replace('  ', ' ').strip())
 
-                elif len(temp_body.split(' ')) >400:
+                elif len(temp_body.split(' ')) > 400:
                     curr_len  = 0
                     newstr = ''
                     for sent in sentences:
@@ -70,7 +70,7 @@ def trim_body(body):
                             break
                     body_new.append(newstr.replace(' <s>', ' ').replace('  ', ' ').strip())
 
-        par_length+=1
+        par_length += 1
 
     return body_new
 
@@ -105,7 +105,7 @@ def preprocess_raw_texts(path: str, file_names: list, plot_file: str, title_file
         f_plot.writelines(['  <p> ' + sentence.strip() + ' <s> ' for sentence in text])
 
         f_plot.write("\n<EOS>\n")
-        title = re.sub("[^А-Яа-я]" , " ", name.split('.')[0]).strip() +'\n'
+        title = re.sub("[^А-Яа-я]" , " ", name.split('.')[0]).strip() + '\n'
         title = re.sub(" +" , " ", title)
         f_title.write(title)
         f_inp.close()

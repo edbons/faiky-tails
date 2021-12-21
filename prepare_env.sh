@@ -8,6 +8,9 @@ sudo apt install p7zip-full p7zip-rar
 
 if [[ $1 == 'cuda11' ]]; then
     pip3 install -r requirements_cuda11.txt -f https://download.pytorch.org/whl/cu113/torch_stable.html
+elif [[ $1 == 'colab' ]]; then
+    pip3 install rouge
+    pip3 install transformers==2.8.0
 else
     pip3 install -r requirements.txt
 fi

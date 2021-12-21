@@ -141,3 +141,5 @@ checkpoints_local
 launch.json
 gpt3
 *.tsv
+dataset/raw_*
+scraper_test.ipynb

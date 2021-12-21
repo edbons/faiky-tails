@@ -50,7 +50,15 @@ def tfmclassifier(textlines, model, tokenizer, gen_len, device='cpu'):
 '''Generate a single paragraph'''
 def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, ids, tagnum, min_len=None, returnnewmem=False):
     src_strs, tgt_strs, gen_strs, genraw, gentok = [], [], [], [], []
-    n_gpu = torch.cuda.device_count()
+    
+    n_gpu = torch.cuda.device_count()       
+    
+    if device == 'cuda':
+      args_cuda = []
+      for arg in args:
+        arg = arg.to(device)
+        args_cuda.append(arg)
+      args = args_cuda
     
     outputs = model(*args, text_encoder=text_encoder, device=device, beam=beam, gen_len=gen_len, k=k, p=p, generate=True, min_len=min_len)
     if n_gpu == 1:
@@ -83,7 +91,7 @@ def generate_paragraph(model, args, text_encoder, device, beam, gen_len, k, p, i
 
 
 '''Generate full stories'''
-def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, save_file, gen_dir="gen", tgt_dir="tgt", max_len=110, stop_words=[], args=None, tags=['_i_','_b_','_b_','_b_','_c_'], dim=768, localfile=None, save_dir=None):
+def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, save_file, max_len=110, stop_words=[], args=None, tags=['_i_','_b_','_b_','_b_','_c_'], dim=768, localfile=None, save_dir=None):
     def dump_to_file(jsf, data):
         for i in range(len(data)):
             try:
@@ -96,6 +104,7 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
     srcs, hyps, refs = [], [], []
     model.eval()
     gptmodel.eval()
+
     iter = 0
 
     try:
@@ -122,14 +131,16 @@ def generatedocs(model, gptmodel, gpttok, val_loader, text_encoder, device, beam
             seenunigrams =  torch.ones(pad_seq.size(0), len(text_encoder)) #[{} for _ in range(pad_seq.size(0))]
             idces = torch.arange(pad_seq.size(0))
 
+            gen_len = gen_len // len(tags)
 
             for tnum in range(len(tags)):
+                print(iter, tnum)
                 tag = tags[tnum]
                 if args.use_model =="plotmachines":
                     if args.use_neighbor_feat:
                         prevprc = tfmclassifier(prev, gptmodel, gpttok, gen_len)
                     if args.use_discourse:
-                        pad_seq [:,args.n_ctx-1] = text_encoder.added_tokens_encoder[tag] #add discourse marker
+                        pad_seq [:, args.n_ctx-1] = text_encoder.added_tokens_encoder[tag] #add discourse marker
                     modelargs = (pad_seq, mask_seq, mem, mmask, ph, pmask, prevprc, seenunigrams, idces)
                     gen_strs, genraw, gentok, seenunigrams = generate_paragraph(model, modelargs, text_encoder, device, beam, gen_len, k, p, docids, tnum, min_len=args.min_len)
                     prevprc = tfmclassifier(genraw, gptmodel, gpttok,gen_len)
@@ -183,13 +194,15 @@ def main(args):
     gen_len = args.gen_len
     k = args.k
 
+    model_name = args.hf_model
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     print("device", device, "n_gpu", n_gpu)
     data_dir = args.data_dir
     #Text Encoder
 
-    text_encoder = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
+    text_encoder = GPT2Tokenizer.from_pretrained(model_name, add_prefix_space=True)
 
     text_encoder.add_special_tokens({'bos_token':'_start_',
                                      'cls_token':'_classify_',
@@ -206,20 +219,20 @@ def main(args):
     print(len(val_loader))
 
     if args.use_model == "plotmachines":
-        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
+        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device, gpt_model=model_name)
     else:
-        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
+        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device, gpt_model=model_name)
 
     doc_model.to(device)
     if n_gpu > 1:
         doc_model = DataParallelModel(doc_model)
 
 
-    gptclf = GPT2Model.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", output_hidden_states=True)
+    gptclf = GPT2Model.from_pretrained(model_name, output_hidden_states=True)
     gptclf.eval()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     gptclf.to(device)
-    gpttok = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
+    gpttok = GPT2Tokenizer.from_pretrained(model_name, add_prefix_space=True)
 
     load_dir = args.load_dir
     bestcheck = os.path.join(load_dir,"checkpoint_best.pt")
@@ -246,7 +259,7 @@ def main(args):
     tagset = ['_i_'] + args.bodynum * ['_b_'] + ['_c_']
     vort = 'test' if args.testset else 'val'
     generatedocs(doc_model, gptclf, gpttok, val_loader, text_encoder, device, beam, gen_len, k, p, os.path.join(args.save_dir, vort + '.gens.tsv'),
-                 'gen', 'tgt', gen_len, [], args, tags = tagset, dim=args.n_embd, save_dir=args.save_dir, localfile=os.path.join('.', vort + '.gens.tsv'))
+                 gen_len, [], args, tags = tagset, dim=args.n_embd, save_dir=args.save_dir, localfile=os.path.join('.', vort + '.gens.tsv'))
 
     print('done decoding....')
 
@@ -301,6 +314,7 @@ if __name__ == "__main__":
     #--bodynum determines format of discourse template for output 
     #(for five paragraph format, use 3, because intro and conclusion will be added automatically)
     parser.add_argument('--bodynum', type=int, default=3, help='The number of body pargraphs to use in generation')
+    parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3large_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
 
 
     args = parser.parse_args()

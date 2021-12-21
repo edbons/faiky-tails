@@ -31,7 +31,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_file', type=str, help="Path to file with plots")
-    parser.add_argument('--model', default="sberbank-ai/rugpt3small_based_on_gpt2", action='model name from huggingface')
+    parser.add_argument('--model', default="sberbank-ai/rugpt3large_based_on_gpt2", action='model name from huggingface')
     args = parser.parse_args()
     print(args)
     main(args)

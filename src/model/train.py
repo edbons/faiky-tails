@@ -249,13 +249,16 @@ def main(args):
     gen_len = args.gen_len
     k = args.k
     accum_iter = args.accum_iter
+
+    model_name = args.hf_model
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     print("device", device, "n_gpu", n_gpu)
     logger = Logger(log_dir)
 
     
-    text_encoder = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True) # , add_prefix_space=True
+    text_encoder = GPT2Tokenizer.from_pretrained(model_name, add_prefix_space=True) # , add_prefix_space=True
 
     text_encoder.add_special_tokens({'bos_token':'_start_',
                                      'cls_token':'_classify_',
@@ -278,7 +281,7 @@ def main(args):
                                                     include_kw = not args.exclude_kw, dim=args.n_embd)
 
         print("Train length: {}, Validation length: {}".format(len(train_loader), len(val_loader)))
-        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
+        doc_model = GPT2BaseModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device, gpt_model=model_name)
 
     elif args.use_model == "plotmachines":
 
@@ -293,7 +296,7 @@ def main(args):
                                                     include_kw = not args.exclude_kw, memsize=args.memstatesize, dim = args.n_embd, use_kwmem=True)
 
         print("Train length: {}, Validation length: {}".format(len(train_loader), len(val_loader)))
-        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device)
+        doc_model = PlotMachinesModel(args, vocab=vocab, n_ctx=n_ctx, gen_len=gen_len, lastidx=text_encoder.eos_token_id, includeprev=args.use_neighbor_feat, device=device, gpt_model=model_name)
     
 
     
@@ -394,6 +397,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_neighbor_feat', action='store_true', help='use neighboring (previous) paragraph encoding as extra input')
     parser.add_argument('--use_discourse', action='store_true', help='use discouse tokens as extra input')
     parser.add_argument('--checkpoint', type=str, default=None, help='location of a previous checkpoint')
+    parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3large_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
 
     args = parser.parse_args()
     print(torch.__version__)
