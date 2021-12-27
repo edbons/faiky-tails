@@ -22,12 +22,12 @@ def scrape_text(url: str) -> str:
         
         text = payload.find_all(id='AR')
         if text:
-            pars = [string for string in text[0].stripped_strings]                
+            pars = [string for string in text[0].stripped_strings if len(string) > 1]                
             return "\n".join(pars)
         
         text = payload.find_all(id='PAR')
         if text:
-            pars = [string for string in text[0].stripped_strings]                
+            pars = [string for string in text[0].stripped_strings if len(string) > 1]                
             return "\n".join(pars)
         
         print(f'Find nothing on {url}')
@@ -49,7 +49,7 @@ def main():
 
     articles = []
     for i in tqdm(range(1, pages_root_count + 1)):
-        print(f'Proccess story{i}')
+        # print(f'Proccess story{i}')
         curr_time = time.time()
         try:
             r_url = url + pages_root_prefix + str(i)

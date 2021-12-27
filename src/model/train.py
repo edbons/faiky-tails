@@ -306,7 +306,7 @@ def main(args):
 
     model_opt = AdamW(filter(lambda p : p.requires_grad, doc_model.parameters()),
                            lr=args.lr,
-                           betas=(args.b1,args.b2),
+                           betas=(args.b1, args.b2),
                            eps=args.e)
 
     lm_loss = ParagraphLoss(criterion, n_ctx=n_ctx, gen_len=gen_len)
