@@ -24,12 +24,12 @@ wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1-7DD
 # python3 src/model/train.py --data_dir dataset/plot/ --output_dir out --experiment_name $1 --gen_len 401 --n_embd 768 --accum_iter 4 --n_batch 2 --p 90 --num_epochs 1 --max_ex 2 --num_val_examples 2 --use_model $1 --use_neighbor_feat --use_discourse --show_progress
 
 # # archivate output
-# 7z out.7z out
+# 7z a out.7z out
 
 # # upload to gdrive
 # sudo apt install musl
 # wget https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive_2.1.1_linux_amd64.tar.gz
 # tar -xzvf gdrive_2.1.1_linux_amd64.tar.gz
 # sudo install gdrive /usr/local/bin/gdrive
-# gdrive upload -p 1u0jweYrxIc3vo6wAqcPNPORw5HKjIUfd out.7z
+# gdrive upload -p <ID> out.7z
 # rm .gdrive/token_v2.json

@@ -18,11 +18,12 @@ def run_batch(batch, model, device):
         return outputs
 
 
-def train_epoch(model, loader, test_loader, optimizer, epoch_num, device, log_interval=10, checkpoint_path=None, accum_iter=2):
+def train_epoch(model, loader, test_loader, optimizer, epoch_num, device, log_interval=10, checkpoint_path=None, accum_iter=2, desc=None):
     losses = []
     avg_loss = []
     step = 1
-    for i, batch in enumerate(tqdm(loader)):
+    train_bar = tqdm(iterable=loader, desc=desc)
+    for i, batch in enumerate(train_bar):
         outputs = run_batch(batch, model, device)
         loss, _ = outputs[:2]
         avg_loss.append(loss.detach().item())
@@ -39,7 +40,8 @@ def train_epoch(model, loader, test_loader, optimizer, epoch_num, device, log_in
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict()}, 
             os.path.join(checkpoint_path, "checkpoint.pt"))
-            print('epoch {}\t[{}/{}]\tloss = {:.4f}'.format(epoch_num, step, len(loader), val_loss))         
+            train_bar.set_postfix(loss=val_loss)
+            # print('epoch {}\t[{}/{}]\tloss = {:.4f}'.format(epoch_num, step, len(loader), val_loss))         
         step += 1
     
     if losses:
@@ -187,7 +189,7 @@ def main(args: argparse.ArgumentParser):
     optimizer = AdamW(model.parameters(), lr=args.lr)
 
     for epoch in range(args.num_epochs):
-        ep_loss = train_epoch(model, train_loader, val_loader, optimizer, epoch, device, log_interval=args.train_log_interval, checkpoint_path=save_dir, accum_iter=args.accum_iter)        
+        ep_loss = train_epoch(model, train_loader, val_loader, optimizer, epoch, device, log_interval=args.train_log_interval, checkpoint_path=save_dir, accum_iter=args.accum_iter, desc="FT Training Epoch [{}/{}]".format(epoch + 1, args.num_epochs))        
         val_loss, scores = evaluate(val_loader, model, text_encoder, device=device, beam=args.beam, k=args.k, p=args.p, repetition_penalty=args.repeattheta, n_ctx=args.n_ctx, gen_len=args.gen_len)
         print(f"{epoch} train loss: {ep_loss}, val loss: {val_loss}, rouge: {scores}")
 
