@@ -26,7 +26,7 @@ def copy_data_to_device(data, device):
 
 def train_eval_loop(model, train_dataset, val_dataset, 
                     lr=1e-4, epoch_n=10, batch_size=32,
-                    device=None, early_stopping_patience=10, l2_reg_alpha=0,
+                    device=None, early_stopping_patience=5, l2_reg_alpha=0,
                     max_batches_per_epoch_train=10000,
                     max_batches_per_epoch_val=1000,
                     data_loader_ctor=DataLoader,

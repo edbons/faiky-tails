@@ -207,7 +207,8 @@ def main(args: argparse.ArgumentParser):
                                             epoch_n=args.num_epochs,
                                             batch_size=args.n_batch,
                                             l2_reg_alpha=0,
-                                            lr_scheduler_ctor=scheduler)
+                                            lr_scheduler_ctor=scheduler,
+                                            early_stopping_patience=3)
 
     torch.save(best_model, os.path.join(save_dir, "checkpoint.pt"))
     
@@ -227,19 +228,19 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default='savedir', help='directory to save logs and checkpoints to')
     parser.add_argument('--data_dir', type=str, default='dataset/full', help='directory with train, dev, test files')
     parser.add_argument('--experiment_name', type=str, required=True, help='name of this experiment will be included in output')
-    parser.add_argument('--train_log_interval', type=int, default=10, help='number of train steps before logging training progress')
-    parser.add_argument('--val_log_interval', type=int, default=10, help='number of train steps before logging validation progress')
-    parser.add_argument('--beam', type=int, default=1, help='beam size for beam search')
-    parser.add_argument('--k', type=int, default=0, help='k for TopK sampling')
-    parser.add_argument('--p', type=float, default=0.9, help='p for Nucleus sampling')
-    parser.add_argument('--temperature', type=float, default=0.7, help='temperature for text generation')
-    parser.add_argument('--accum_iter', type=int, default=2, help='number of batches to accumulate gradients before doing backprop')
+    # parser.add_argument('--train_log_interval', type=int, default=10, help='number of train steps before logging training progress')
+    # parser.add_argument('--val_log_interval', type=int, default=10, help='number of train steps before logging validation progress')
+    # parser.add_argument('--beam', type=int, default=1, help='beam size for beam search')
+    # parser.add_argument('--k', type=int, default=0, help='k for TopK sampling')
+    # parser.add_argument('--p', type=float, default=0.9, help='p for Nucleus sampling')
+    # parser.add_argument('--temperature', type=float, default=0.7, help='temperature for text generation')
+    # parser.add_argument('--accum_iter', type=int, default=2, help='number of batches to accumulate gradients before doing backprop')
     parser.add_argument('--gen_len', type=int, default=512, help='max generation length + 1 for end token')
     parser.add_argument('--pad_len', type=int, default=1024, help='max input length')
     parser.add_argument('--n_ctx', type=int, default=70, help='keyword tokens length')
     parser.add_argument('--max_samples', type=int, default=None, help='limit dataset')
     parser.add_argument('--show_progress', action='store_true')    
-    parser.add_argument('--repeattheta', type=float, default=1.4, help='how much to penalize repitition (1 is not at all, > 1 is more penalty)')    
+    # parser.add_argument('--repeattheta', type=float, default=1.4, help='how much to penalize repitition (1 is not at all, > 1 is more penalty)')    
     parser.add_argument('--checkpoint', type=str, default=None, help='location of a previous checkpoint')
     parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3small_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
     parser.add_argument('--dataset', type=str, default="tails", help='type of dataset: tails/all')
