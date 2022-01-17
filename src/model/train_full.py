@@ -10,6 +10,7 @@ from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from pipeline import train_eval_loop, init_random_seed
 import datetime
+import pickle
 
 
 def run_batch(batch, model, device):
@@ -173,8 +174,6 @@ def main(args: argparse.ArgumentParser):
     if args.dataset == 'tails':
         train_dataset = FullDataset(os.path.join(args.data_dir, 'train_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
         val_dataset = FullDataset(os.path.join(args.data_dir, 'val_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-        # train_loader = DataLoader(train_dataset, args.n_batch, shuffle=True)
-        # val_loader = DataLoader(val_dataset, args.n_batch, shuffle=False)
 
     elif args.dataset == 'all':
         corpus1_path = 'dataset/raw'
@@ -183,23 +182,18 @@ def main(args: argparse.ArgumentParser):
         corpus2_files = [os.path.join(corpus2_path, name) for name in os.listdir(corpus2_path)]     
         train, val_test = train_test_split(corpus1_files, test_size=0.4)
         val, test = train_test_split(val_test, test_size=0.5)
-        #TO-DO save test to pickle
+ 
+        with open(os.path.join(args.output_dir, args.experiment_name, 'test_dataset'), 'wb') as f:
+            pickle.dump(test, file=f)
+        
 
         train.extend(corpus2_files)
         train_dataset = RawFilesDataset(data_files=train, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-        # train_loader = DataLoader(train_dataset, args.n_batch, shuffle=True)
         val_dataset = RawFilesDataset(data_files=val, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-        # val_loader = DataLoader(val_dataset, args.n_batch, shuffle=False)
 
-
-    # model.to(device)
 
     scheduler = lambda optim: \
     torch.optim.lr_scheduler.ReduceLROnPlateau(optim, patience=5, factor=0.5, verbose=True)
-
-    # optimizer = AdamW(model.parameters(), lr=args.lr)
-
-    # best_loss = 0
 
     # for epoch in range(args.num_epochs):
     #     ep_loss = train_epoch(model, train_loader, val_loader, optimizer, epoch, device, log_interval=args.train_log_interval, checkpoint_path=save_dir, accum_iter=args.accum_iter, desc="FT Training Epoch [{}/{}]".format(epoch + 1, args.num_epochs))        
