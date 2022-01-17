@@ -1,5 +1,9 @@
 from re import split
 from rake_nltk import Rake
+
+import nltk
+nltk.download('stopwords')
+
 from nltk.corpus import stopwords
 from torch.utils.data import Dataset
 from transformers import GPT2Tokenizer
@@ -106,11 +110,14 @@ class RawFilesDataset(Dataset):
 
             if len(top_features) > topK:
                 top_features = top_features[:topK]
+            
+            return " ".join(top_features)
 
-        except Exception:
+        except Exception as e:
             print("Fail Rake on text:", text)
+            print("Exception:", e)
         
-        return " ".join(top_features)
+        
         
     def __getitem__(self, indx):
         target_txt = self.data[indx]
