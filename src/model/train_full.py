@@ -2,12 +2,15 @@ import os
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, AdamW
 import torch
 from torch.utils.data import DataLoader
+
 import transformers
-from data_full import FullDataset
+from data_full import FullDataset, RawFilesDataset
 import argparse
 from tqdm import tqdm
-import rouge
-from typing import List
+from sklearn.model_selection import train_test_split
+from pipeline import train_eval_loop, init_random_seed
+import datetime
+
 
 def run_batch(batch, model, device):
         input_ids, mask, label = batch['sample'], batch['mask'], batch['label']
@@ -50,68 +53,66 @@ def train_epoch(model, loader, test_loader, optimizer, epoch_num, device, log_in
         return sum(avg_loss) / len(avg_loss)
 
 
-def get_average_scores(hyps: List[str], refs: List[str]):       
-    rouge_scorer = rouge.Rouge()
-    averaged_scores = rouge_scorer.get_scores(hyps, refs, avg=True)
-    return averaged_scores
+# def get_average_scores(hyps: List[str], refs: List[str]):       
+#     rouge_scorer = rouge.Rouge()
+#     averaged_scores = rouge_scorer.get_scores(hyps, refs, avg=True)
+#     return averaged_scores
 
-def generate_story(batch: dict, model: GPT2LMHeadModel, text_encoder: GPT2Tokenizer, device: str, beam: int, k: int, p: float, repetition_penalty: float, n_ctx: int=100, gen_len: int=1024, gen_temperature: float=0.9):
-    ctx_strs, tgt_strs, gen_strs = [], [], []
+# def generate_story(batch: dict, model: GPT2LMHeadModel, text_encoder: GPT2Tokenizer, device: str, beam: int, k: int, p: float, repetition_penalty: float, n_ctx: int=100, gen_len: int=1024, gen_temperature: float=0.9):
+#     ctx_strs, tgt_strs, gen_strs = [], [], []
 
-    input_ids, mask = batch['sample'], batch['mask']
-    keyword_ids = input_ids[:, :n_ctx + 1 + 1 + 1] # + BOS + __kw__ + cls
-    target_toks = input_ids[:, n_ctx + 1 + 1 + 1:]
-
-    # mask = torch.ones(keyword_ids.size()).type_as(mask)
-
-    keyword_ids = keyword_ids.to(device)
-    target_toks = target_toks.to(device)
-    # mask = mask.to(device) 
-
-    gen_params = {'input_ids': keyword_ids,
-                'do_sample': True,                
-                'num_beams': beam,
-                'temperature': gen_temperature,
-                'max_length': gen_len,
-                'min_length': 20,
-                'top_k': k,
-                'top_p': p,
-                'repetition_penalty': repetition_penalty,
-                'bos_token_id': text_encoder.bos_token_id,
-                'pad_token_id': text_encoder.pad_token_type_id,  # text_encoder.pad_token_type_id
-                'eos_token_id': text_encoder.eos_token_id,
-                # 'attention_mask': mask,
-                'decoder_start_token_id': text_encoder.cls_token_id
-                }
+#     input_ids, mask = batch['sample'], batch['mask']
+#     septok = text_encoder.convert_tokens_to_ids('[SEP]')
     
-    outputs = model.generate(**gen_params)
-    generated_batch = outputs[:, n_ctx + 1 + 1 + 1:]
+#     #TO-DO divide batch to kw and tartget
+#     sep_idx = torch.where(input_ids == septok)
+#     keyword_ids = input_ids[:, :sep_idx + 1] # + BOS + __kw__ + cls
+#     target_toks = input_ids[:, sep_idx + 1:]
+
+#     # keyword_ids = input_ids[:, :n_ctx + 1 + 1 + 1] # + BOS + __kw__ + cls
+#     # target_toks = input_ids[:, n_ctx + 1 + 1 + 1:]
+
+#     # mask = torch.ones(keyword_ids.size()).type_as(mask)
+
+#     keyword_ids = keyword_ids.to(device)
+#     target_toks = target_toks.to(device)
+#     # mask = mask.to(device) 
+
+#     gen_params = {'input_ids': keyword_ids,
+#                 'do_sample': True,                
+#                 'num_beams': beam,
+#                 'temperature': gen_temperature,
+#                 'max_length': gen_len,
+#                 'min_length': 20,
+#                 'top_k': k,
+#                 'top_p': p,
+#                 'repetition_penalty': repetition_penalty,
+#                 'bos_token_id': text_encoder.bos_token_id,
+#                 'pad_token_id': text_encoder.pad_token_type_id,  # text_encoder.pad_token_type_id
+#                 'eos_token_id': text_encoder.eos_token_id,
+#                 # 'attention_mask': mask,
+#                 # 'decoder_start_token_id': text_encoder.cls_token_id
+#                 }
     
-    for i, generated_toks in enumerate(generated_batch):
-        ctx_str = text_encoder.decode(keyword_ids[i], skip_special_tokens=True, clean_up_tokenization_spaces=False)
-        ctx_strs.append(ctx_str)
-        tgt_str = text_encoder.decode(target_toks[i], skip_special_tokens=True, clean_up_tokenization_spaces=False)
-        tgt_strs.append(tgt_str)
-        gen_str = text_encoder.decode(generated_toks, skip_special_tokens=True, clean_up_tokenization_spaces=False)
-        gen_strs.append(gen_str)
+#     outputs = model.generate(**gen_params)
+#     generated_batch = outputs[:, n_ctx + 1 + 1 + 1:]
     
-    return ctx_strs, tgt_strs, gen_strs
+#     for i, generated_toks in enumerate(generated_batch):
+#         ctx_str = text_encoder.decode(keyword_ids[i], skip_special_tokens=True, clean_up_tokenization_spaces=False)
+#         ctx_strs.append(ctx_str)
+#         tgt_str = text_encoder.decode(target_toks[i], skip_special_tokens=True, clean_up_tokenization_spaces=False)
+#         tgt_strs.append(tgt_str)
+#         gen_str = text_encoder.decode(generated_toks, skip_special_tokens=True, clean_up_tokenization_spaces=False)
+#         gen_strs.append(gen_str)
+    
+#     return ctx_strs, tgt_strs, gen_strs
 
 
 def evaluate(val_loader: DataLoader, 
             model: GPT2LMHeadModel, 
-            text_encoder: GPT2Tokenizer, 
             device: str, 
-            beam: int, 
-            k: int, 
-            p: float, 
-            repetition_penalty: 
-            float, 
-            show_progress=True, 
-            n_ctx: int=100, 
-            gen_len: int=1024,
-            gen_temperature: float=0.9):
-    contexts, hyps, refs = [], [], []
+            show_progress=True):
+    
     avg_loss = []
     
     if show_progress:
@@ -119,31 +120,13 @@ def evaluate(val_loader: DataLoader,
     else:
         eval_bar = val_loader
     
-    for j, batch in enumerate(eval_bar):
+    for batch in eval_bar:
         with torch.no_grad():
-            if j <= 4:
-                #evaluate Rouge on a very small subset of dev examples just to double check that training is working
-                model.eval()
-                # Generating outputs for evaluation
-                context, new_refs, new_hyps = generate_story(batch, model, text_encoder, device=device, beam=beam, k=k, p=p, repetition_penalty=repetition_penalty, n_ctx=n_ctx, gen_len=gen_len, gen_temperature=gen_temperature)
-                contexts.extend(context)
-                hyps.extend(new_hyps)
-                refs.extend(new_refs)
-            # Calculating loss
             outputs = run_batch(batch, model, device)
             loss, _ = outputs[:2]
             avg_loss.append(loss.detach().item())
-
-    try:
-        print('Context: {}'.format(contexts[0]))
-        print('\nHypothesis: {}'.format(hyps[0]))
-        print("\nReference: {}".format(refs[0]))
-    except:
-        pass
-
-    scores = get_average_scores(hyps, refs)
-
-    return sum(avg_loss) / len(avg_loss), scores
+    
+    return sum(avg_loss) / len(avg_loss)
 
 def init(args):
     print("Creating directories")
@@ -155,8 +138,9 @@ def init(args):
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(save_dir, exist_ok=True)
 
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed_all(args.seed)
+    # torch.manual_seed(args.seed)
+    # torch.cuda.manual_seed_all(args.seed)
+    init_random_seed(args.seed)
 
 
 def main(args: argparse.ArgumentParser):
@@ -164,13 +148,20 @@ def main(args: argparse.ArgumentParser):
 
     save_dir = os.path.join(args.output_dir, args.experiment_name, "checkpoints")
     model_name = args.hf_model
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     text_encoder = GPT2Tokenizer.from_pretrained(model_name, add_prefix_space=True)
-    text_encoder.add_special_tokens({'bos_token':'_start_',
-                                        'cls_token':'_classify_',
-                                        'eos_token':'_end_',
-                                        'additional_special_tokens': ['_kw_']
+    
+    if args.dataset == 'tails':
+        text_encoder.add_special_tokens({'bos_token':'_start_',
+                                            'cls_token':'_classify_',
+                                            'eos_token':'_end_',
+                                            'additional_special_tokens': ['_kw_']
+                                        })
+    elif args.dataset == 'all':
+        text_encoder.add_special_tokens({'bos_token': '<s>',                                     
+                                     'eos_token': '</s>',
+                                     'additional_special_tokens': ['[SEP]']
                                     })
 
     model = GPT2LMHeadModel.from_pretrained(model_name)
@@ -179,24 +170,56 @@ def main(args: argparse.ArgumentParser):
     # model.config.pad_token_id = model.config.eos_token_id
     model.resize_token_embeddings(len(text_encoder))
 
-    train_dataset = FullDataset(os.path.join(args.data_dir, 'train_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-    train_loader = DataLoader(train_dataset, args.n_batch, shuffle=True)
+    if args.dataset == 'tails':
+        train_dataset = FullDataset(os.path.join(args.data_dir, 'train_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        val_dataset = FullDataset(os.path.join(args.data_dir, 'val_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        # train_loader = DataLoader(train_dataset, args.n_batch, shuffle=True)
+        # val_loader = DataLoader(val_dataset, args.n_batch, shuffle=False)
 
-    val_dataset = FullDataset(os.path.join(args.data_dir, 'val_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-    val_loader = DataLoader(val_dataset, args.n_batch, shuffle=False)
+    elif args.dataset == 'all':
+        corpus1_path = 'dataset/raw'
+        corpus2_path = 'dataset/raw_other'
+        corpus1_files = [os.path.join(corpus1_path, name) for name in os.listdir(corpus1_path)]
+        corpus2_files = [os.path.join(corpus2_path, name) for name in os.listdir(corpus2_path)]     
+        train, val_test = train_test_split(corpus1_files, test_size=0.4)
+        val, test = train_test_split(val_test, test_size=0.5)
+        #TO-DO save test to pickle
 
-    model.to(device)
-    optimizer = AdamW(model.parameters(), lr=args.lr)
-
-    for epoch in range(args.num_epochs):
-        ep_loss = train_epoch(model, train_loader, val_loader, optimizer, epoch, device, log_interval=args.train_log_interval, checkpoint_path=save_dir, accum_iter=args.accum_iter, desc="FT Training Epoch [{}/{}]".format(epoch + 1, args.num_epochs))        
-        val_loss, scores = evaluate(val_loader, model, text_encoder, device=device, beam=args.beam, k=args.k, p=args.p, repetition_penalty=args.repeattheta, n_ctx=args.n_ctx, gen_len=args.gen_len)
-        print(f"{epoch} train loss: {ep_loss}, val loss: {val_loss}, rouge: {scores}")
+        train.extend(corpus2_files)
+        train_dataset = RawFilesDataset(data_files=train, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        # train_loader = DataLoader(train_dataset, args.n_batch, shuffle=True)
+        val_dataset = RawFilesDataset(data_files=val, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        # val_loader = DataLoader(val_dataset, args.n_batch, shuffle=False)
 
 
-    torch.save({'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict()}, 
-                os.path.join(save_dir, "checkpoint.pt"))
+    # model.to(device)
+
+    scheduler = lambda optim: \
+    torch.optim.lr_scheduler.ReduceLROnPlateau(optim, patience=5, factor=0.5, verbose=True)
+
+    # optimizer = AdamW(model.parameters(), lr=args.lr)
+
+    # best_loss = 0
+
+    # for epoch in range(args.num_epochs):
+    #     ep_loss = train_epoch(model, train_loader, val_loader, optimizer, epoch, device, log_interval=args.train_log_interval, checkpoint_path=save_dir, accum_iter=args.accum_iter, desc="FT Training Epoch [{}/{}]".format(epoch + 1, args.num_epochs))        
+    #     val_loss = evaluate(val_loader, model, text_encoder, device=device)
+    #     print(f"{epoch} train loss: {ep_loss}, val loss: {val_loss}")
+
+    best_val_loss, best_model = train_eval_loop(model=model,
+                                            train_dataset=train_dataset,
+                                            val_dataset=val_dataset,                        
+                                            lr=args.lr,
+                                            epoch_n=args.num_epochs,
+                                            batch_size=args.n_batch,
+                                            l2_reg_alpha=0,
+                                            lr_scheduler_ctor=scheduler)
+
+    torch.save(best_model, os.path.join(save_dir, "checkpoint.pt"))
+    
+    with open (os.path.join(args.output_dir, args.experiment_name,'results.txt'), 'w', encoding='utf-8') as f:
+        print('timestamp','experiment', 'model', 'dataset', 'val_loss', file=f, sep='\t')
+        print(str(datetime.datetime.today()), args.experiment_name, args.hf_model, args.dataset, best_val_loss, file=f, sep='\t')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -225,6 +248,7 @@ if __name__ == "__main__":
     parser.add_argument('--repeattheta', type=float, default=1.4, help='how much to penalize repitition (1 is not at all, > 1 is more penalty)')    
     parser.add_argument('--checkpoint', type=str, default=None, help='location of a previous checkpoint')
     parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3small_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
+    parser.add_argument('--dataset', type=str, default="tails", help='type of dataset: tails/all')
 
     
     args = parser.parse_args()
