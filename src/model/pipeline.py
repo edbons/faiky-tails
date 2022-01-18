@@ -82,7 +82,7 @@ def train_eval_loop(model, train_dataset, val_dataset,
     for epoch_i in range(epoch_n):
         try:
             epoch_start = datetime.datetime.now()
-            print('Эпоха {}/{}'.format(epoch_i, epoch_n))
+            print('Эпоха {}/{}'.format(epoch_i + 1, epoch_n))
 
             model.train()
             mean_train_loss = 0

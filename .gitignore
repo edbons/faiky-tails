@@ -143,3 +143,4 @@ gpt3
 *.tsv
 dataset/raw_backup
 scraper_test.ipynb
+*.7z
