@@ -157,12 +157,12 @@ def main(args: argparse.ArgumentParser):
         text_encoder.add_special_tokens({'bos_token':'_start_',
                                             'cls_token':'_classify_',
                                             'eos_token':'_end_',
-                                            'additional_special_tokens': ['_kw_']
+                                            'additional_special_tokens': ['_kw_', '_endkw_']
                                         })
     elif args.dataset == 'all':
         text_encoder.add_special_tokens({'bos_token': '<s>',                                     
                                      'eos_token': '</s>',
-                                     'additional_special_tokens': ['[SEP]']
+                                     'additional_special_tokens': ['[SEP]', '_kw_', '_endkw_']
                                     })
 
     model = GPT2LMHeadModel.from_pretrained(model_name)

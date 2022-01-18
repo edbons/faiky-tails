@@ -1,8 +1,9 @@
-from re import split
-from rake_nltk import Rake
+import re
+from rake_nltk import Rake, Metric
 
 import nltk
 nltk.download('stopwords')
+nltk.download('punkt')
 
 from nltk.corpus import stopwords
 from torch.utils.data import Dataset
@@ -97,13 +98,22 @@ class RawFilesDataset(Dataset):
 
         self.n_ctx = n_ctx
 
-        self.rake = Rake(language='russian', stopwords=stopwords.words())
+        self.rake = Rake(language='russian', 
+                        stopwords=stopwords.words('russian'), 
+                        ranking_metric=Metric.WORD_DEGREE, 
+                        max_length=5, 
+                        include_repeated_phrases=False)
 
     
     def __len__(self):
         return len(self.data)
 
-    def extract_context(self, text: str="", topK=10):
+    def preprocess_text(self, text: str=""):
+        text = re.sub('\.\.\.', '.', text)
+        text = re.sub('—', '-', text)
+        return text
+    
+    def extract_context(self, text: str="", topK=20):
         try:            
             self.rake.extract_keywords_from_text(text)
             top_features = self.rake.get_ranked_phrases()
@@ -111,17 +121,18 @@ class RawFilesDataset(Dataset):
             if len(top_features) > topK:
                 top_features = top_features[:topK]
             
-            return " ".join(top_features)
+            return top_features
 
         except Exception as e:
             print("Fail Rake on text:", text)
             print("Exception:", e)
-        
-        
+                
         
     def __getitem__(self, indx):
         target_txt = self.data[indx]
-        context = self.extract_context(target_txt)              
+        target_txt = self.preprocess_text(target_txt)
+        context = self.extract_context(target_txt)
+        context = " _kw_ ".join(context)              
 
         context = self.tokenizer.encode(context)
         target_txt = self.tokenizer.encode(target_txt)
@@ -130,31 +141,26 @@ class RawFilesDataset(Dataset):
         septok = self.tokenizer.convert_tokens_to_ids('[SEP]')
         starttok = self.tokenizer.convert_tokens_to_ids('<s>')
         endtok = self.tokenizer.convert_tokens_to_ids('</s>')
+        # keytok = self.tokenizer.convert_tokens_to_ids('_kw_')
+        endkeytok = self.tokenizer.convert_tokens_to_ids('_endkw_')
 
         if len(context) > self.n_ctx:
             context = context[:self.n_ctx]
         
         # не считать лосс по контексту
-        context = [starttok] + context + [septok]
+        context = [starttok] + context + [endkeytok] + [septok]
         target_txt = target_txt + [endtok]
-        sample = context + target_txt
-        
-        # sample = [starttok] + context + \
-        #          [septok] + target_txt + \
-        #          [endtok]
-        
-
+        sample = context + target_txt        
+       
         if len(sample) <= self.pad_len:            
             mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))
             label = [-100] * len(context) + target_txt + [-100] * (self.pad_len - len(sample))  # не считать лосс по контексту
-            # label = sample + [-100] * (self.pad_len - len(sample))
             sample = sample + [endtok] * (self.pad_len - len(sample))
         else:
             sample = sample[:self.pad_len]
             sample[-1] = endtok
             mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))
             label = [-100] * len(context) + sample[len(context):] # не считать лосс по контексту
-            # label = sample + [-100] * (self.pad_len - len(sample))  # TO DO не считать лосс по контексту
 
         sample = torch.LongTensor(sample)
         mask = torch.LongTensor(mask)
