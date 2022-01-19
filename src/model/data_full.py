@@ -144,23 +144,46 @@ class RawFilesDataset(Dataset):
         # keytok = self.tokenizer.convert_tokens_to_ids('_kw_')
         endkeytok = self.tokenizer.convert_tokens_to_ids('_endkw_')
 
-        if len(context) > self.n_ctx:
-            context = context[:self.n_ctx]
+        ctx_mask = []
+
+        if len(context) > (self.n_ctx - 3):  # [starttok] + [endkeytok] + [septok]
+            context = context[:self.n_ctx - 3] 
         
-        # не считать лосс по контексту
         context = [starttok] + context + [endkeytok] + [septok]
+
+        if len(context) < self.n_ctx:
+            ctx_mask = [1] * len(context) + [0] * (self.n_ctx - len(context))
+            context = context + [0] * (self.n_ctx - len(context))
+
+        else:
+            ctx_mask = [1] * len(context)
+
         target_txt = target_txt + [endtok]
-        sample = context + target_txt        
-       
+        sample = context + target_txt
+        
         if len(sample) <= self.pad_len:            
-            mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))  # TO DO маску можно сделать 0 для паддинга контекста, сделать контекст фиксированной длинны
+            mask = ctx_mask + [1] * len(target_txt) + [0] * (self.pad_len - len(sample))
             label = [-100] * len(context) + target_txt + [-100] * (self.pad_len - len(sample))  # не считать лосс по контексту
             sample = sample + [endtok] * (self.pad_len - len(sample))
         else:
-            sample = sample[:self.pad_len]
+            target_txt = target_txt[:self.pad_len - len(context)]
+            sample = context + target_txt
             sample[-1] = endtok
-            mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))
-            label = [-100] * len(context) + sample[len(context):] # не считать лосс по контексту
+            mask = ctx_mask + [1] * len(target_txt) + [0] * (self.pad_len - len(sample))
+            label = [-100] * len(context) + sample[len(context):] 
+
+        # sample = context + target_txt        
+       
+        # if len(sample) <= self.pad_len:            
+        #     mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))  # TO DO маску можно сделать 0 для паддинга контекста, сделать контекст фиксированной длинны
+        #     label = [-100] * len(context) + target_txt + [-100] * (self.pad_len - len(sample))  # не считать лосс по контексту
+        #     sample = sample + [endtok] * (self.pad_len - len(sample))
+        # else:
+        #     sample = sample[:self.pad_len]
+        #     sample[-1] = endtok
+        #     mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))
+        #     label = [-100] * len(context) + sample[len(context):] # не считать лосс по контексту
+
 
         sample = torch.LongTensor(sample)
         mask = torch.LongTensor(mask)
