@@ -7,8 +7,8 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from tqdm import tqdm
-from data_full import RawFilesDataset
-from pipeline import copy_data_to_device
+from src.model.data_full import RawFilesDataset
+from src.model.pipeline import copy_data_to_device, init_random_seed
 from typing import List, Tuple, Union
 import warnings
     
@@ -39,17 +39,15 @@ class StoryGenerator:
         self.model.to(self.device)
         self.model.eval()
 
-    def generate_stories(self, data: list, n_ctx: int=100, batch_size: int=2, max_iter: int=None, gen_len: int=512) -> List[Tuple[str, str, str]]:        
+    def generate_stories(self, data: list, n_ctx: int=100, batch_size: int=2, max_samples: int=None, gen_len: int=512) -> List[Tuple[str, str, str]]:        
 
-        dataset = RawFilesDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx)
+        dataset = RawFilesDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx, max_samples=max_samples)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         self.n_ctx = n_ctx        
 
         result = []
     
-        for i, batch in enumerate(tqdm(loader)):
-            if max_iter is not None and i == max_iter:
-                break       
+        for batch in tqdm(loader): 
             
             context, refs, hyps = self.__generate_batch(batch=batch, gen_len=gen_len)
             result.extend([item for item in zip(context, refs, hyps)])            
@@ -101,6 +99,8 @@ class StoryGenerator:
 
 
 def main(args: argparse.ArgumentParser):
+    init_random_seed(args.seed)
+
     output_dir = os.path.join(args.output_dir, args.experiment_name)
 
     text_encoder = GPT2Tokenizer.from_pretrained(args.hf_model, add_prefix_space=True)
@@ -122,7 +122,7 @@ def main(args: argparse.ArgumentParser):
     data = generator.generate_stories(test, 
                                     n_ctx=args.n_ctx, 
                                     batch_size=args.n_batch, 
-                                    max_iter=args.max_samples, 
+                                    max_samples=args.max_samples, 
                                     gen_len=args.gen_len)
     
     data = [ ( clean_text(item[0]), clean_text(item[1]), clean_text(item[2]) ) for item in data]
@@ -131,6 +131,7 @@ def main(args: argparse.ArgumentParser):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--output_dir', type=str, default='savedir', help='directory to save logs and checkpoints to')
     parser.add_argument('--experiment_name', type=str, required=True, help='name of this experiment will be included in output')
     # parser.add_argument('--beam', type=int, default=1, help='beam size for beam search')

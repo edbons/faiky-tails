@@ -4,11 +4,11 @@ import torch
 from torch.utils.data import DataLoader
 
 import transformers
-from data_full import FullDataset, RawFilesDataset
+from src.model.data_full import FullDataset, RawFilesDataset
 import argparse
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from pipeline import train_eval_loop, init_random_seed
+from src.model.pipeline import train_eval_loop, init_random_seed
 import datetime
 import pickle
 
