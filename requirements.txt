@@ -2,4 +2,6 @@ numpy
 rouge
 nltk
 torch
-transformers==2.8.0
+transformers==4.11.3
+rake_nltk
+sklearn

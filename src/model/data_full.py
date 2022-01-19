@@ -153,7 +153,7 @@ class RawFilesDataset(Dataset):
         sample = context + target_txt        
        
         if len(sample) <= self.pad_len:            
-            mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))
+            mask = [1] * len(sample) + [0] * (self.pad_len - len(sample))  # TO DO маску можно сделать 0 для паддинга контекста, сделать контекст фиксированной длинны
             label = [-100] * len(context) + target_txt + [-100] * (self.pad_len - len(sample))  # не считать лосс по контексту
             sample = sample + [endtok] * (self.pad_len - len(sample))
         else:
