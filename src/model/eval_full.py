@@ -9,11 +9,15 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from tqdm import tqdm
 from data_full import RawFilesDataset
 from pipeline import copy_data_to_device
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
-def flat_text(text: str="") -> str:
-    return text.replace('\r\n',' ').replace('\n',' ').strip()
+def flat_text(text: Union[str, List[str]]) -> Union[str, List[str]]:
+    if isinstance(text, str):
+        return text.replace('\r\n',' ').replace('\n',' ').strip()
+    elif isinstance(text, list):
+        texts = [item.replace('\r\n',' ').replace('\n',' ').strip() for item in text]
+        return texts
 
 
 def write_stories(data: tuple, path: str=''):
@@ -35,44 +39,49 @@ class StoryGenerator:
     def generate_stories(self, data: list, n_ctx: int=100, batch_size: int=2, max_iter: int=None, gen_len: int=512) -> List[Tuple[str, str, str]]:        
 
         dataset = RawFilesDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx)
-        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)        
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+        self.n_ctx = n_ctx        
 
         result = []
     
         for i, batch in tqdm(enumerate(loader)):
-            if max_iter is not None and i==max_iter:
+            if max_iter is not None and i == max_iter:
                 break       
             
             context, refs, hyps = self.__generate_batch(batch=batch, gen_len=gen_len)
-            result.append( (context, refs, hyps) )            
+            result = [item for item in zip(context, refs, hyps)]            
 
         return result
 
     def __generate_batch(self, batch: dict, gen_len: int=512)-> Tuple[str, str, str]:
         septok = self.tokenizer.convert_tokens_to_ids('[SEP]')
         endtok = self.tokenizer.eos_token_id
-        input_ids = batch['sample']
-        input_ids = copy_data_to_device(input_ids, self.device)
+        input_ids, mask = batch['sample'], batch['mask'] 
+        
+        # sep_idx = torch.where(input_ids[0] == septok)[0].item()
+        # eos_idx = torch.where(input_ids[0] == endtok)[0][0].item()
+        
+        context = input_ids[:, :self.n_ctx]
+        ctx_mask = mask[:, :self.n_ctx]
+        
+        # target_txt = input_ids[:, self.n_ctx:eos_idx+1]
+        target_txt = input_ids[:, self.n_ctx:]
+        context = copy_data_to_device(context, self.device)
+        ctx_mask = copy_data_to_device(ctx_mask, self.device)
 
-        sep_idx = torch.where(input_ids[0] == septok)[0].item()
-        eos_idx = torch.where(input_ids[0] == endtok)[0][0].item()
-        context = input_ids[:, :sep_idx+1]
-        target_txt = input_ids[:, sep_idx+1:eos_idx+1]
-
-        context_txt = self.tokenizer.decode(context[0], skip_special_tokens=False, clean_up_tokenization_spaces=False)
-        refs = self.tokenizer.decode(target_txt[0], skip_special_tokens=False, clean_up_tokenization_spaces=False)
         sample_output = self.model.generate(
-                                        context,                     
+                                        context,
+                                        attention_mask=ctx_mask,                                                     
                                         max_length=gen_len, 
                                         do_sample=True,
-                                        num_beams = 20,  # https://arxiv.org/pdf/2108.03502.pdf 
+                                        num_beams=20,  # https://arxiv.org/pdf/2108.03502.pdf 
                                         top_p=0.95, # https://arxiv.org/pdf/2108.03502.pdf 
                                         top_k=3, # https://arxiv.org/pdf/2108.03502.pdf
                                         eos_token_id=endtok,
                                         bos_token_id=self.tokenizer.bos_token_id,
-                                        decoder_start_token_id = septok,
-                                        pad_token_id=endtok,
-                                        min_length = 100,
+                                        decoder_start_token_id=septok,
+                                        pad_token_id=0,
+                                        min_length=100,
                                         num_return_sequences=1, 
                                         temperature=1.0, # https://arxiv.org/pdf/2108.03502.pdf
                                         repetition_penalty=2.0,  # https://arxiv.org/pdf/2108.03502.pdf
@@ -80,7 +89,10 @@ class StoryGenerator:
                                         forced_eos_token_id = endtok,
                                         early_stopping=True  # https://arxiv.org/pdf/2108.03502.pdf
                                     )
-        hyps = self.tokenizer.decode(sample_output[0][sep_idx+1:], skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        
+        context_txt = self.tokenizer.batch_decode(context, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        refs = self.tokenizer.batch_decode(target_txt, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        hyps = self.tokenizer.batch_decode(sample_output[:, self.n_ctx:], skip_special_tokens=False, clean_up_tokenization_spaces=False)
         
         return context_txt, refs, hyps
 
