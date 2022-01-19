@@ -10,6 +10,9 @@ from tqdm import tqdm
 from data_full import RawFilesDataset
 from pipeline import copy_data_to_device
 from typing import List, Tuple, Union
+import warnings
+    
+warnings.simplefilter("ignore")
 
 
 def flat_text(text: Union[str, List[str]]) -> Union[str, List[str]]:
@@ -44,7 +47,7 @@ class StoryGenerator:
 
         result = []
     
-        for i, batch in tqdm(enumerate(loader)):
+        for i, batch in enumerate(tqdm(loader)):
             if max_iter is not None and i == max_iter:
                 break       
             
