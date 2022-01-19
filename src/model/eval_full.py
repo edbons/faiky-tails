@@ -15,11 +15,11 @@ import warnings
 warnings.simplefilter("ignore")
 
 
-def flat_text(text: Union[str, List[str]]) -> Union[str, List[str]]:
+def clean_text(text: Union[str, List[str]]) -> Union[str, List[str]]:
     if isinstance(text, str):
-        return text.replace('\r\n',' ').replace('\n',' ').strip()
+        return text.replace('\r\n', ' ').replace('\n', ' ').replace('<s>', '').replace('</s>', '').replace('<pad>', '').replace('_kw_', '').replace('_endkw_', '').replace('[SEP]', '').strip() 
     elif isinstance(text, list):
-        texts = [item.replace('\r\n',' ').replace('\n',' ').strip() for item in text]
+        texts = [item.replace('\r\n', ' ').replace('\n', ' ').replace('<s>', '').replace('</s>', '').replace('<pad>', '').replace('_kw_', '').replace('_endkw_', '').replace('[SEP]', '').strip() for item in text]
         return texts
 
 
@@ -52,7 +52,7 @@ class StoryGenerator:
                 break       
             
             context, refs, hyps = self.__generate_batch(batch=batch, gen_len=gen_len)
-            result = [item for item in zip(context, refs, hyps)]            
+            result.extend([item for item in zip(context, refs, hyps)])            
 
         return result
 
@@ -125,7 +125,7 @@ def main(args: argparse.ArgumentParser):
                                     max_iter=args.max_samples, 
                                     gen_len=args.gen_len)
     
-    data = [ ( flat_text(item[0]), flat_text(item[1]), flat_text(item[2]) ) for item in data]
+    data = [ ( clean_text(item[0]), clean_text(item[1]), clean_text(item[2]) ) for item in data]
     write_stories(data, output_dir)
 
 
