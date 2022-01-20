@@ -77,7 +77,7 @@ class StoryGenerator:
                                         do_sample=True,
                                         num_beams=20,  # https://arxiv.org/pdf/2108.03502.pdf 
                                         top_p=0.95, # https://arxiv.org/pdf/2108.03502.pdf 
-                                        # top_k=3, # https://arxiv.org/pdf/2108.03502.pdf
+                                        top_k=3, # https://arxiv.org/pdf/2108.03502.pdf
                                         eos_token_id=endtok,
                                         bos_token_id=self.tokenizer.bos_token_id,
                                         decoder_start_token_id=septok,
