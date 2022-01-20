@@ -6,20 +6,24 @@ from scipy import linalg
 
 from transformers import BertTokenizer, BertModel
 
+"""
+It should be noted as the FBD is a distance measure, its lower values will be better.
+"""
 
-BERT_MODEL = 'bert-large-cased'
+BERT_MODEL = 'DeepPavlov/rubert-base-cased'
 BERT_MAX_LENGTH = 512
 
 
-def evaluate_frechet_bert_distance(hypo_texts, ref_texts):
+def evaluate_frechet_bert_distance(hypo_texts: list, ref_texts: list):
     print('Evaluating Frechet Bert Distance...')
-
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
     tokenizer = BertTokenizer.from_pretrained(BERT_MODEL, do_lower_case=False)
     bert = BertModel.from_pretrained(
-        BERT_MODEL, output_hidden_states=True).to('cuda')
+        BERT_MODEL, output_hidden_states=True).to(device)
 
-    features = get_features(hypo_texts, tokenizer, bert)
-    ref_features = get_features(ref_texts, tokenizer, bert)
+    features = get_features(hypo_texts, tokenizer, bert, device)
+    ref_features = get_features(ref_texts, tokenizer, bert, device)
 
     results = {
         'n_hypo': len(hypo_texts),
@@ -36,19 +40,20 @@ def evaluate_frechet_bert_distance(hypo_texts, ref_texts):
 
     assert dist[0] < 1e-5
 
-    for l, r in [(1, 8), (9, 16), (17, 24)]:
+    # for l, r in [(1, 8), (9, 16), (17, 24)]:
+    for l, r in [(1, 6), (7, 12)]:
         results[f'fbd_{l}-{r}'] = sum(dist[l:r + 1])
 
     return results
 
 
-def get_features(texts, tokenizer, bert):
+def get_features(texts, tokenizer: BertTokenizer, bert:BertModel, device: str='cpu'):
     all_features = [[] for _ in range(bert.config.num_hidden_layers + 1)]
     for text in tqdm(texts):
-        input_ids = tokenizer.encode(text, max_length=BERT_MAX_LENGTH)
+        input_ids = tokenizer.encode(text, max_length=BERT_MAX_LENGTH, truncation=True)
 
         with torch.no_grad():
-            outputs = bert(torch.tensor([input_ids]).to('cuda'))
+            outputs = bert(torch.tensor([input_ids]).to(device))
 
         for layer in range(bert.config.num_hidden_layers + 1):
             all_features[layer].append(outputs[2][layer][0][0].tolist())

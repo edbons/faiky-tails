@@ -1,6 +1,11 @@
 import nltk
 from scipy.stats.mstats import gmean
 
+"""
+If the generated sentences won’t have diversity or quality, the n-gram distribution of generated
+texts will be different from that of the real texts and causing to decrease the MS-Jaccard score consequently. 
+As it is obvious, the MS-Jaccard is a similarity measure and so its higher value will be better.
+"""
 
 def evaluate_ms_jaccard(ref_texts, hypo_texts):
     print('Evaluating MS-Jaccard...')

@@ -66,14 +66,14 @@ class StoryGenerator:
         ctx_mask = mask[:, :self.n_ctx]
         
         # target_txt = input_ids[:, self.n_ctx:eos_idx+1]
-        target_txt = input_ids[:, self.n_ctx:]
+        target = input_ids[:, self.n_ctx:gen_len + self.n_ctx]
         context = copy_data_to_device(context, self.device)
         ctx_mask = copy_data_to_device(ctx_mask, self.device)
 
         sample_output = self.model.generate(
                                         context,
                                         attention_mask=ctx_mask,                                                     
-                                        max_length=gen_len, 
+                                        max_length=gen_len + self.n_ctx, 
                                         do_sample=True,
                                         num_beams=20,  # https://arxiv.org/pdf/2108.03502.pdf 
                                         top_p=0.95, # https://arxiv.org/pdf/2108.03502.pdf 
@@ -82,7 +82,7 @@ class StoryGenerator:
                                         bos_token_id=self.tokenizer.bos_token_id,
                                         decoder_start_token_id=septok,
                                         pad_token_id=0,
-                                        min_length=100,
+                                        min_length=gen_len,  # 100
                                         num_return_sequences=1, 
                                         temperature=1.0, # https://arxiv.org/pdf/2108.03502.pdf
                                         repetition_penalty=2.0,  # https://arxiv.org/pdf/2108.03502.pdf
@@ -92,7 +92,7 @@ class StoryGenerator:
                                     )
         
         context_txt = self.tokenizer.batch_decode(context, skip_special_tokens=False, clean_up_tokenization_spaces=False)
-        refs = self.tokenizer.batch_decode(target_txt, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+        refs = self.tokenizer.batch_decode(target, skip_special_tokens=False, clean_up_tokenization_spaces=False)        
         hyps = self.tokenizer.batch_decode(sample_output[:, self.n_ctx:], skip_special_tokens=False, clean_up_tokenization_spaces=False)
         
         return context_txt, refs, hyps
