@@ -17,7 +17,6 @@ def main(args):
         results[label] = pickle.load(open(filename, 'rb'))
         keys = results[label].keys()
 
-    # labels = sorted(results.keys(), key=lambda s: s[::-1])
     labels = sorted(results.keys())
 
     table = PrettyTable([' '] + labels)
