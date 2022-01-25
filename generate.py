@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from tqdm import tqdm
-from src.model.data_full import RawFilesDataset
+from src.model.data_full import RawFilesDataset, PromtDataset
 from src.model.pipeline import copy_data_to_device, init_random_seed
 from typing import List, Tuple, Union
 import warnings
@@ -39,9 +39,10 @@ class StoryGenerator:
         self.model.to(self.device)
         self.model.eval()
 
-    def generate_stories(self, data: list, n_ctx: int=100, batch_size: int=2, max_samples: int=None, gen_len: int=512, **args) -> List[Tuple[str, str, str]]:        
+    def generate_stories(self, data: str="", n_ctx: int=100, batch_size: int=2, max_samples: int=None, gen_len: int=512, **args) -> List[Tuple[str, str, str]]:        
 
-        dataset = RawFilesDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx, max_samples=max_samples)
+        # dataset = RawFilesDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx, max_samples=max_samples)
+        dataset = PromtDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx, max_samples=max_samples)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         self.n_ctx = n_ctx
         self.params = args        
@@ -108,9 +109,14 @@ def main(args: argparse.ArgumentParser):
     with open(os.path.join(output_dir,'checkpoints/checkpoint.pt'), 'rb') as f:
         model = torch.load(f, map_location=device)
 
-    with open(os.path.join(output_dir,'test_dataset'), 'rb') as f:
-        test = pickle.load(f)
-
+    # with open(os.path.join(output_dir,'test_dataset'), 'rb') as f:
+    #     test = pickle.load(f)
+    postfix = ""
+    if args.use_ner:
+        postfix = "_ner" 
+    
+    test = os.path.join(args.data_dir, 'test' + postfix)
+    
     params = {'num_beams': args.num_beams,
                 'top_p': args.p,
                 'top_k': args.k,
@@ -127,12 +133,13 @@ def main(args: argparse.ArgumentParser):
                                     **params)
     
     data = [ ( clean_text(item[0]), clean_text(item[1]), clean_text(item[2]) ) for item in data]
-    label = f'beams{args.num_beams}_p{str(args.p).replace(".","_")}_k{args.k}_t{str(args.temperature).replace(".","_")}_rep{str(args.repeattheta).replace(".","_")}'
+    label = f'beams{args.num_beams}_p{str(args.p).replace(".","")}_k{args.k}_t{str(args.temperature).replace(".","")}_rep{str(args.repeattheta).replace(".","")}'
     write_stories(data, output_dir, label)
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--data_dir', type=str, default='dataset/full', help='directory with train, dev, test files')
     parser.add_argument('--output_dir', type=str, default='savedir', help='directory to save logs and checkpoints to')
     parser.add_argument('--experiment_name', type=str, required=True, help='name of this experiment will be included in output')
     parser.add_argument('--num_beams', type=int, default=5, help='beam size for beam search')
@@ -144,7 +151,8 @@ if __name__=='__main__':
     parser.add_argument('--n_ctx', type=int, default=70, help='keyword tokens length')  
     parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3small_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
     parser.add_argument('--n_batch', type=int, default=4)
-    parser.add_argument('--max_samples', type=int, default=None, help='limit dataset')  
+    parser.add_argument('--max_samples', type=int, default=None, help='limit dataset')
+    parser.add_argument('--use_ner', action='store_true')  
     args = parser.parse_args()
     print(args)
     main(args)

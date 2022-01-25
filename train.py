@@ -83,7 +83,7 @@ def main(args: argparse.ArgumentParser):
                                             batch_size=args.n_batch,
                                             l2_reg_alpha=0,
                                             lr_scheduler_ctor=scheduler,
-                                            early_stopping_patience=3,
+                                            early_stopping_patience=2,
                                             log_dir=log_dir)
 
     torch.save(best_model, os.path.join(checkpoint_dir, "checkpoint.pt"))
@@ -104,8 +104,7 @@ if __name__ == "__main__":
     parser.add_argument('--gen_len', type=int, default=512, help='max generation length + 1 for end token')
     parser.add_argument('--pad_len', type=int, default=1024, help='max input length')
     parser.add_argument('--n_ctx', type=int, default=70, help='keyword tokens length')
-    parser.add_argument('--max_samples', type=int, default=None, help='limit dataset')
-    parser.add_argument('--show_progress', action='store_true')       
+    parser.add_argument('--max_samples', type=int, default=None, help='limit dataset')     
     parser.add_argument('--checkpoint', type=str, default=None, help='location of a previous checkpoint')
     parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3small_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
     parser.add_argument('--dataset', type=str, default="tails", help='type of dataset: tails/all')

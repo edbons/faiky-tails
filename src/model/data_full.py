@@ -207,7 +207,8 @@ class PromtDataset(Dataset):
         
     def __getitem__(self, indx):
         target_txt = self.data[indx]        
-        context, target_txt = target_txt.split('|')             
+        context, target_txt = target_txt.split('|')
+        target_txt = target_txt.replace('[EOP]', '\n')             
 
         context = self.tokenizer.encode(context)
         target_txt = self.tokenizer.encode(target_txt)
