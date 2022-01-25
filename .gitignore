@@ -136,7 +136,7 @@ dataset/tails.*
 notes.txt
 *.ipynb
 dataset/plot/*.pkl
-savedir
+*checkpoints
 checkpoints_local
 launch.json
 gpt3

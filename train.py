@@ -13,7 +13,6 @@ def init(args):
     print("Creating directories")
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(os.path.join(args.output_dir, args.experiment_name), exist_ok=True)
-    os.makedirs(os.path.join(args.output_dir, args.experiment_name), exist_ok=True)
     checkpoint_dir = os.path.join(args.output_dir, args.experiment_name, "checkpoints")
     log_dir = os.path.join(args.output_dir, args.experiment_name, "logs")
     os.makedirs(log_dir, exist_ok=True)

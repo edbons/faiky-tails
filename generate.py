@@ -91,12 +91,17 @@ class StoryGenerator:
         
         return context_txt, refs, hyps
 
+def init(args):
+    init_random_seed(args.seed)
+    if args.experiment_name == 'baseline':
+        print("Creating directories")
+        os.makedirs(args.output_dir, exist_ok=True)
+        os.makedirs(os.path.join(args.output_dir, args.experiment_name), exist_ok=True)
+        
 
 def main(args: argparse.ArgumentParser):
-    init_random_seed(args.seed)
-
-    output_dir = os.path.join(args.output_dir, args.experiment_name)
-    
+    init(args)
+    output_dir = os.path.join(args.output_dir, args.experiment_name)    
 
     text_encoder = GPT2Tokenizer.from_pretrained(args.hf_model, add_prefix_space=True)
     text_encoder.add_special_tokens({'bos_token': '<s>',                                     
@@ -106,11 +111,13 @@ def main(args: argparse.ArgumentParser):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu' 
     
-    with open(os.path.join(output_dir,'checkpoints/checkpoint.pt'), 'rb') as f:
-        model = torch.load(f, map_location=device)
+    if args.experiment_name == 'baseline':
+        model = model = GPT2LMHeadModel.from_pretrained(args.hf_model)    
+        model.resize_token_embeddings(len(text_encoder))
+    else:
+        with open(os.path.join(output_dir,'checkpoints/checkpoint.pt'), 'rb') as f:
+            model = torch.load(f, map_location=device)
 
-    # with open(os.path.join(output_dir,'test_dataset'), 'rb') as f:
-    #     test = pickle.load(f)
     postfix = ""
     if args.use_ner:
         postfix = "_ner" 
@@ -141,7 +148,7 @@ if __name__=='__main__':
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--data_dir', type=str, default='dataset/full', help='directory with train, dev, test files')
     parser.add_argument('--output_dir', type=str, default='savedir', help='directory to save logs and checkpoints to')
-    parser.add_argument('--experiment_name', type=str, required=True, help='name of this experiment will be included in output')
+    parser.add_argument('--experiment_name', type=str, default='baseline', required=True, help='name of this experiment will be included in output. Value "baseline" is for generate with original hf_model (without checkpoints)')
     parser.add_argument('--num_beams', type=int, default=5, help='beam size for beam search')
     parser.add_argument('--k', type=int, default=3, help='k for TopK sampling')
     parser.add_argument('--p', type=float, default=0.95, help='p for Nucleus sampling')

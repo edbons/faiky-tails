@@ -1,0 +1,2 @@
+timestamp	experiment	model	use_ner	val_loss
+2022-01-25 09:38:20.779118	s_kw_ner	sberbank-ai/rugpt3small_based_on_gpt2	True	2.981079389309061
