@@ -1,155 +1,37 @@
 import os
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, AdamW
 import torch
-from torch.utils.data import DataLoader
 
 import transformers
-from src.model.data_full import FullDataset, RawFilesDataset
+from src.model.data_full import FullDataset, RawFilesDataset, PromtDataset
 import argparse
-from tqdm import tqdm
-from sklearn.model_selection import train_test_split
 from src.model.pipeline import train_eval_loop, init_random_seed
 import datetime
-import pickle
 
-
-def run_batch(batch, model, device):
-        input_ids, mask, label = batch['sample'], batch['mask'], batch['label']
-        input_ids = input_ids.to(device)
-        mask = mask.to(device)
-        label = label.to(device)
-        outputs = model(input_ids, attention_mask=mask, labels=label)
-        return outputs
-
-
-def train_epoch(model, loader, test_loader, optimizer, epoch_num, device, log_interval=10, checkpoint_path=None, accum_iter=2, desc=None):
-    losses = []
-    avg_loss = []
-    step = 1
-    train_bar = tqdm(iterable=loader, desc=desc)
-    for i, batch in enumerate(train_bar):
-        outputs = run_batch(batch, model, device)
-        loss, _ = outputs[:2]
-        avg_loss.append(loss.detach().item())
-        loss.backward()
-        if i % accum_iter == 0:
-            optimizer.step()
-            optimizer.zero_grad()
-            torch.cuda.empty_cache()
-        if step % log_interval == 0:
-            val_loss = sum(avg_loss) / len(avg_loss)
-            losses.append(val_loss)
-            avg_loss = []            
-            torch.save({
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict()}, 
-            os.path.join(checkpoint_path, "checkpoint.pt"))
-            train_bar.set_postfix(loss=val_loss)
-            # print('epoch {}\t[{}/{}]\tloss = {:.4f}'.format(epoch_num, step, len(loader), val_loss))         
-        step += 1
-    
-    if losses:
-        return sum(losses) / len(losses)
-    else:
-        return sum(avg_loss) / len(avg_loss)
-
-
-# def get_average_scores(hyps: List[str], refs: List[str]):       
-#     rouge_scorer = rouge.Rouge()
-#     averaged_scores = rouge_scorer.get_scores(hyps, refs, avg=True)
-#     return averaged_scores
-
-# def generate_story(batch: dict, model: GPT2LMHeadModel, text_encoder: GPT2Tokenizer, device: str, beam: int, k: int, p: float, repetition_penalty: float, n_ctx: int=100, gen_len: int=1024, gen_temperature: float=0.9):
-#     ctx_strs, tgt_strs, gen_strs = [], [], []
-
-#     input_ids, mask = batch['sample'], batch['mask']
-#     septok = text_encoder.convert_tokens_to_ids('[SEP]')
-    
-#     #TO-DO divide batch to kw and tartget
-#     sep_idx = torch.where(input_ids == septok)
-#     keyword_ids = input_ids[:, :sep_idx + 1] # + BOS + __kw__ + cls
-#     target_toks = input_ids[:, sep_idx + 1:]
-
-#     # keyword_ids = input_ids[:, :n_ctx + 1 + 1 + 1] # + BOS + __kw__ + cls
-#     # target_toks = input_ids[:, n_ctx + 1 + 1 + 1:]
-
-#     # mask = torch.ones(keyword_ids.size()).type_as(mask)
-
-#     keyword_ids = keyword_ids.to(device)
-#     target_toks = target_toks.to(device)
-#     # mask = mask.to(device) 
-
-#     gen_params = {'input_ids': keyword_ids,
-#                 'do_sample': True,                
-#                 'num_beams': beam,
-#                 'temperature': gen_temperature,
-#                 'max_length': gen_len,
-#                 'min_length': 20,
-#                 'top_k': k,
-#                 'top_p': p,
-#                 'repetition_penalty': repetition_penalty,
-#                 'bos_token_id': text_encoder.bos_token_id,
-#                 'pad_token_id': text_encoder.pad_token_type_id,  # text_encoder.pad_token_type_id
-#                 'eos_token_id': text_encoder.eos_token_id,
-#                 # 'attention_mask': mask,
-#                 # 'decoder_start_token_id': text_encoder.cls_token_id
-#                 }
-    
-#     outputs = model.generate(**gen_params)
-#     generated_batch = outputs[:, n_ctx + 1 + 1 + 1:]
-    
-#     for i, generated_toks in enumerate(generated_batch):
-#         ctx_str = text_encoder.decode(keyword_ids[i], skip_special_tokens=True, clean_up_tokenization_spaces=False)
-#         ctx_strs.append(ctx_str)
-#         tgt_str = text_encoder.decode(target_toks[i], skip_special_tokens=True, clean_up_tokenization_spaces=False)
-#         tgt_strs.append(tgt_str)
-#         gen_str = text_encoder.decode(generated_toks, skip_special_tokens=True, clean_up_tokenization_spaces=False)
-#         gen_strs.append(gen_str)
-    
-#     return ctx_strs, tgt_strs, gen_strs
-
-
-def evaluate(val_loader: DataLoader, 
-            model: GPT2LMHeadModel, 
-            device: str, 
-            show_progress=True):
-    
-    avg_loss = []
-    
-    if show_progress:
-        eval_bar = tqdm(iterable=val_loader, desc="Evaluate")
-    else:
-        eval_bar = val_loader
-    
-    for batch in eval_bar:
-        with torch.no_grad():
-            outputs = run_batch(batch, model, device)
-            loss, _ = outputs[:2]
-            avg_loss.append(loss.detach().item())
-    
-    return sum(avg_loss) / len(avg_loss)
 
 def init(args):
     print("Creating directories")
     os.makedirs(args.output_dir, exist_ok=True)
     os.makedirs(os.path.join(args.output_dir, args.experiment_name), exist_ok=True)
     os.makedirs(os.path.join(args.output_dir, args.experiment_name), exist_ok=True)
-    save_dir = os.path.join(args.output_dir, args.experiment_name, "checkpoints")
+    checkpoint_dir = os.path.join(args.output_dir, args.experiment_name, "checkpoints")
     log_dir = os.path.join(args.output_dir, args.experiment_name, "logs")
     os.makedirs(log_dir, exist_ok=True)
-    os.makedirs(save_dir, exist_ok=True)
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
-    # torch.manual_seed(args.seed)
-    # torch.cuda.manual_seed_all(args.seed)
     init_random_seed(args.seed)
+    return checkpoint_dir, log_dir
 
 
 def main(args: argparse.ArgumentParser):
-    init(args)
+    checkpoint_dir, log_dir = init(args)
 
-    save_dir = os.path.join(args.output_dir, args.experiment_name, "checkpoints")
+    exp_dir = os.path.join(args.output_dir, args.experiment_name)
+
     model_name = args.hf_model
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    postfix = ""
+    if args.use_ner:
+        postfix = "_ner" 
 
     text_encoder = GPT2Tokenizer.from_pretrained(model_name, add_prefix_space=True)
     
@@ -165,10 +47,7 @@ def main(args: argparse.ArgumentParser):
                                      'additional_special_tokens': ['[SEP]', '_kw_', '_endkw_']
                                     })
 
-    model = GPT2LMHeadModel.from_pretrained(model_name)
-    
-    # text_encoder.pad_token = text_encoder.eos_token
-    # model.config.pad_token_id = model.config.eos_token_id
+    model = GPT2LMHeadModel.from_pretrained(model_name)    
     model.resize_token_embeddings(len(text_encoder))
 
     if args.dataset == 'tails':
@@ -176,29 +55,25 @@ def main(args: argparse.ArgumentParser):
         val_dataset = FullDataset(os.path.join(args.data_dir, 'val_full'), text_encoder, args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
 
     elif args.dataset == 'all':
-        corpus1_path = 'dataset/raw'
-        corpus2_path = 'dataset/raw_other'
-        corpus1_files = [os.path.join(corpus1_path, name) for name in os.listdir(corpus1_path)]
-        corpus2_files = [os.path.join(corpus2_path, name) for name in os.listdir(corpus2_path)]     
-        train, val_test = train_test_split(corpus1_files, test_size=0.4)
-        val, test = train_test_split(val_test, test_size=0.5)
+        # corpus1_path = 'dataset/raw'
+        # corpus2_path = 'dataset/raw_other'
+        # corpus1_files = [os.path.join(corpus1_path, name) for name in os.listdir(corpus1_path)]
+        # corpus2_files = [os.path.join(corpus2_path, name) for name in os.listdir(corpus2_path)]     
+        # train, val_test = train_test_split(corpus1_files, test_size=0.4)
+        # val, test = train_test_split(val_test, test_size=0.5)
  
-        with open(os.path.join(args.output_dir, args.experiment_name, 'test_dataset'), 'wb') as f:
-            pickle.dump(test, file=f)
+        # with open(os.path.join(args.output_dir, args.experiment_name, 'test_dataset'), 'wb') as f:
+        #     pickle.dump(test, file=f)
         
 
-        train.extend(corpus2_files)
-        train_dataset = RawFilesDataset(data_files=train, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-        val_dataset = RawFilesDataset(data_files=val, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
-
+        # train.extend(corpus2_files)
+        # train_dataset = RawFilesDataset(data_files=train, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        # val_dataset = RawFilesDataset(data_files=val, tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        train_dataset = PromtDataset(data_file=os.path.join(args.data_dir, 'train' + postfix), tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
+        val_dataset = PromtDataset(data_file=os.path.join(args.data_dir, 'val' + postfix), tokenizer=text_encoder, pad_len=args.pad_len, max_samples=args.max_samples, n_ctx=args.n_ctx)
 
     scheduler = lambda optim: \
     torch.optim.lr_scheduler.ReduceLROnPlateau(optim, patience=5, factor=0.5, verbose=True)
-
-    # for epoch in range(args.num_epochs):
-    #     ep_loss = train_epoch(model, train_loader, val_loader, optimizer, epoch, device, log_interval=args.train_log_interval, checkpoint_path=save_dir, accum_iter=args.accum_iter, desc="FT Training Epoch [{}/{}]".format(epoch + 1, args.num_epochs))        
-    #     val_loss = evaluate(val_loader, model, text_encoder, device=device)
-    #     print(f"{epoch} train loss: {ep_loss}, val loss: {val_loss}")
 
     best_val_loss, best_model = train_eval_loop(model=model,
                                             train_dataset=train_dataset,
@@ -208,13 +83,14 @@ def main(args: argparse.ArgumentParser):
                                             batch_size=args.n_batch,
                                             l2_reg_alpha=0,
                                             lr_scheduler_ctor=scheduler,
-                                            early_stopping_patience=3)
+                                            early_stopping_patience=3,
+                                            log_dir=log_dir)
 
-    torch.save(best_model, os.path.join(save_dir, "checkpoint.pt"))
+    torch.save(best_model, os.path.join(checkpoint_dir, "checkpoint.pt"))
     
-    with open (os.path.join(args.output_dir, args.experiment_name,'results.txt'), 'w', encoding='utf-8') as f:
-        print('timestamp','experiment', 'model', 'dataset', 'val_loss', file=f, sep='\t')
-        print(str(datetime.datetime.today()), args.experiment_name, args.hf_model, args.dataset, best_val_loss, file=f, sep='\t')
+    with open (os.path.join(exp_dir,'results.txt'), 'w', encoding='utf-8') as f:
+        print('timestamp','experiment', 'model', 'use_ner', 'val_loss', file=f, sep='\t')
+        print(str(datetime.datetime.today()), args.experiment_name, args.hf_model, args.use_ner, best_val_loss, file=f, sep='\t')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -233,6 +109,7 @@ if __name__ == "__main__":
     parser.add_argument('--checkpoint', type=str, default=None, help='location of a previous checkpoint')
     parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3small_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
     parser.add_argument('--dataset', type=str, default="tails", help='type of dataset: tails/all')
+    parser.add_argument('--use_ner', action='store_true')
 
     
     args = parser.parse_args()

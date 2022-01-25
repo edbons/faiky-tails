@@ -43,7 +43,6 @@ def preprocess_texts(output_path: str, file_names: list, name: str, top_kw: int,
                 include_repeated_phrases=False)
     if use_ner:
         nlp = spacy.load('ru_core_news_lg')
-        name = name + '_ner'
     
     output_file = os.path.join(output_path, name)
     fout = open(output_file, 'a', encoding='utf-8')
@@ -81,9 +80,11 @@ def preprocess_texts(output_path: str, file_names: list, name: str, top_kw: int,
 def main(args):
 
     output_path = args.output_path
-    # TO-DO remove  files fix
-    [os.remove(output_path + file) for file in os.listdir(output_path)]
-
+    
+    postfix = ""
+    if args.use_ner:
+        postfix = "_ner"    
+    
     text_files = [os.path.join('dataset/raw', name) for name in os.listdir('dataset/raw')] + \
          [os.path.join('dataset/raw_other', name) for name in os.listdir('dataset/raw_other')]
     
@@ -91,9 +92,16 @@ def main(args):
     train, testval = train_test_split(text_files, test_size=0.2)
     val, test = train_test_split(testval, test_size=0.5)
 
-    preprocess_texts(output_path, train, 'train', args.top_kw, use_ner=args.use_ner)
-    preprocess_texts(output_path, val, 'val', args.top_kw, use_ner=args.use_ner)
-    preprocess_texts(output_path, test, 'test', args.top_kw, use_ner=args.use_ner)
+    # TO-DO remove  files fix
+    for name in  ['train', 'val', 'test']:    
+        try:
+            os.remove(os.path.join(output_path, name + postfix))        
+        except OSError as error:
+            pass
+    
+    preprocess_texts(output_path, train, 'train' + postfix, args.top_kw, use_ner=args.use_ner)
+    preprocess_texts(output_path, val, 'val' + postfix, args.top_kw, use_ner=args.use_ner)
+    preprocess_texts(output_path, test, 'test' + postfix, args.top_kw, use_ner=args.use_ner)
 
 
 if __name__ == "__main__":

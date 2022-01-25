@@ -2,10 +2,17 @@ import copy
 import datetime
 import random
 import traceback
+import logging
+import os
 
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+
+logger = logging.getLogger('pipeline')
+logger.setLevel(logging.INFO)
 
 
 def init_random_seed(value=0):
@@ -33,7 +40,8 @@ def train_eval_loop(model, train_dataset, val_dataset,
                     optimizer_ctor=None,
                     lr_scheduler_ctor=None,
                     shuffle_train=True,
-                    dataloader_workers_n=0):
+                    dataloader_workers_n=0,
+                    log_dir=None):
     """
     Цикл для обучения модели. После каждой эпохи качество модели оценивается по отложенной выборке.
     :param model: torch.nn.Module - обучаемая модель
@@ -55,6 +63,15 @@ def train_eval_loop(model, train_dataset, val_dataset,
         - среднее значение функции потерь на валидации на лучшей эпохе
         - лучшая модель
     """
+    enable_logs = False
+    if log_dir is not None:
+        fh = logging.FileHandler(os.path.join(log_dir, 'train.log'), encoding='utf-8')
+        fh.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+        enable_logs = True
+    
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(device)
@@ -83,11 +100,13 @@ def train_eval_loop(model, train_dataset, val_dataset,
         try:
             epoch_start = datetime.datetime.now()
             print('Эпоха {}/{}'.format(epoch_i + 1, epoch_n))
+            if enable_logs:
+                logger.info('Эпоха {}/{}'.format(epoch_i + 1, epoch_n))
 
             model.train()
             mean_train_loss = 0
             train_batches_n = 0
-            for batch_i, batch in enumerate(train_dataloader):
+            for batch_i, batch in enumerate(tqdm(train_dataloader)):
                 if batch_i > max_batches_per_epoch_train:
                     break
                 
@@ -111,15 +130,17 @@ def train_eval_loop(model, train_dataset, val_dataset,
             print('Эпоха: {} итераций, {:0.2f} сек'.format(train_batches_n,
                                                            (datetime.datetime.now() - epoch_start).total_seconds()))
             print('Среднее значение функции потерь на обучении', mean_train_loss)
-
-
+            if enable_logs:
+                logger.info('Эпоха: {} итераций, {:0.2f} сек'.format(train_batches_n,
+                                                           (datetime.datetime.now() - epoch_start).total_seconds()))
+                logger.info('Среднее значение функции потерь на обучении {}'.format(mean_train_loss))
 
             model.eval()
             mean_val_loss = 0
             val_batches_n = 0
 
             with torch.no_grad():
-                for batch_i, batch in enumerate(val_dataloader):
+                for batch_i, batch in enumerate(tqdm(val_dataloader)):
                     if batch_i > max_batches_per_epoch_val:
                         break
 
@@ -135,7 +156,9 @@ def train_eval_loop(model, train_dataset, val_dataset,
                     val_batches_n += 1
 
             mean_val_loss /= val_batches_n
-            print('Среднее значение функции потерь на валидации', mean_val_loss)
+            print('Среднее значение функции потерь на валидации {}'.format(mean_val_loss))
+            if enable_logs:
+                logger.info('Среднее значение функции потерь на валидации {}'.format(mean_val_loss))
 
             if mean_val_loss < best_val_loss:
                 best_epoch_i = epoch_i
@@ -145,6 +168,9 @@ def train_eval_loop(model, train_dataset, val_dataset,
             elif epoch_i - best_epoch_i > early_stopping_patience:
                 print('Модель не улучшилась за последние {} эпох, прекращаем обучение'.format(
                     early_stopping_patience))
+                if enable_logs:
+                    logger.info('Модель не улучшилась за последние {} эпох, прекращаем обучение'.format(
+                    early_stopping_patience))
                 break
 
             if lr_scheduler is not None:
@@ -153,9 +179,13 @@ def train_eval_loop(model, train_dataset, val_dataset,
             print()
         except KeyboardInterrupt:
             print('Досрочно остановлено пользователем')
+            if enable_logs:
+                logger.info('Досрочно остановлено пользователем')
             break
         except Exception as ex:
             print('Ошибка при обучении: {}\n{}'.format(ex, traceback.format_exc()))
+            if enable_logs:
+                logger.info('Ошибка при обучении: {}\n{}'.format(ex, traceback.format_exc()))
             break
 
     return best_val_loss, best_model
