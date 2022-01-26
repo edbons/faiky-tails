@@ -9,7 +9,7 @@ from src.metrics.frechet_bert_distance import evaluate_frechet_bert_distance
 from src.metrics.tfidf_distance import evaluate_tfidf_distance
 from src.metrics.forward_backward_bleu import evaluate_forward_backward_bleu
 from src.metrics.rouge import evaluate_rouge
-
+from src.metrics.bertscore import evaluate_bertscore
 
 def eval_all_metrics(ref_texts: list, hypo_texts: list, output_dir: str, label: str) -> None:
 
@@ -32,6 +32,10 @@ def eval_all_metrics(ref_texts: list, hypo_texts: list, output_dir: str, label: 
     rouge_results = evaluate_rouge(hyps=hypo_texts, refs=ref_texts)
     pickle.dump(rouge_results, open(f'{output_dir}/rouge_{label}.pickle', 'wb'))
     print(rouge_results)
+
+    bertscore_results = evaluate_bertscore(hyps=hypo_texts, refs=ref_texts)
+    pickle.dump(bertscore_results, open(f'{output_dir}/bertscore_{label}.pickle', 'wb'))
+    print(bertscore_results)
 
 
 def main(args):    
