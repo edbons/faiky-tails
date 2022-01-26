@@ -5,3 +5,6 @@ torch
 transformers==4.11.3
 rake_nltk
 sklearn
+spacy
+datasets
+bert_score

@@ -4,7 +4,7 @@ import argparse
 import os
 import pandas as pd
 
-METRICS = ['ms_jaccard', 'tfidf_distance', 'frechet_bert_distance', 'forward_backward_bleu', 'rouge']
+METRICS = ['ms_jaccard', 'tfidf_distance', 'frechet_bert_distance', 'forward_backward_bleu', 'rouge', 'bertscore']
 
 def main(args):
     experiments = os.listdir(args.output_dir)
@@ -28,6 +28,7 @@ def main(args):
     df = pd.concat(results, axis=0)
     df.drop(['n_ref', 'n_hypo'], axis=1, inplace=True)
     df.to_csv('experiments_results.csv', encoding='utf-8', sep='|')
+    print("Results saved to experiments_results.csv!")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
