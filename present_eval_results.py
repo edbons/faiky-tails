@@ -3,8 +3,7 @@ from glob import glob
 import argparse
 import os
 import pandas as pd
-
-METRICS = ['ms_jaccard', 'tfidf_distance', 'frechet_bert_distance', 'forward_backward_bleu', 'rouge', 'bertscore']
+from evaluate import METRICS
 
 def main(args):
     experiments = os.listdir(args.output_dir)
@@ -14,7 +13,7 @@ def main(args):
         log_dir = os.path.join(args.output_dir, experiment, 'eval_logs')     
         
         exp_results=[]
-        for metric in METRICS:
+        for metric in list(METRICS):
             metric_results = {}
             filenames = glob(f'{log_dir}/{metric}*.pickle')
             for name in filenames:
