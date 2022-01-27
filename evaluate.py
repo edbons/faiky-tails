@@ -15,10 +15,10 @@ from src.metrics.self_bleu import evaluate_self_bleu
 METRICS = {'ms_jaccard': evaluate_ms_jaccard, 
             'tfidf_distance': evaluate_tfidf_distance, 
             'frechet_bert_distance': evaluate_frechet_bert_distance, 
-            'forward_backward_bleu': evaluate_forward_backward_bleu, 
+            'forward_backward_bleu': evaluate_forward_backward_bleu,
+            'self_bleu': evaluate_self_bleu, 
             'rouge': evaluate_rouge, 
-            'bertscore': evaluate_bertscore, 
-            'self_bleu': evaluate_self_bleu}
+            'bertscore': evaluate_bertscore}
 
 def eval_all_metrics(ref_texts: list, hypo_texts: list, output_dir: str, label: str) -> None:
 

@@ -79,9 +79,9 @@ class StoryGenerator:
                                         pad_token_id=0,
                                         min_length=gen_len,
                                         num_return_sequences=1,                   
-                                        no_repeat_ngram_size=3, # https://arxiv.org/pdf/2108.03502.pdf
+                                        no_repeat_ngram_size=3, 
                                         forced_eos_token_id = endtok,
-                                        early_stopping=True,  # https://arxiv.org/pdf/2108.03502.pdf
+                                        early_stopping=True,  
                                         **self.params
                                     )
         

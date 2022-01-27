@@ -134,7 +134,6 @@ udpipe_syntagrus.model
 dataset/corpus.txt
 dataset/tails.*
 notes.txt
-*.ipynb
 dataset/plot/*.pkl
 *checkpoints
 checkpoints_local
@@ -147,3 +146,5 @@ scraper_test.ipynb
 work.ipynb
 analyse
 src/plotmachines
+*promt_ranking*
+work.ipynb
