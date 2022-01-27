@@ -130,22 +130,11 @@ dmypy.json
 .pyre/
 
 # project ignore
-udpipe_syntagrus.model
-dataset/corpus.txt
-dataset/tails.*
 notes.txt
-dataset/plot/*.pkl
 *checkpoints
-checkpoints_local
 launch.json
-gpt3
-*.tsv
-dataset/raw_backup
-scraper_test.ipynb
 *.7z
-work.ipynb
 analyse
 src/plotmachines
-*promt_ranking*
 work.ipynb
 savedir
