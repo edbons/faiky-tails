@@ -1,6 +1,7 @@
 # Metrics
 
-Sources: 
+Sources:
+ 
     * https://github.com/tanyuqian/progressive-generation
     * https://huggingface.co/metrics
 
