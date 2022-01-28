@@ -109,7 +109,7 @@ if __name__ == "__main__":
     # parser.add_argument('--use_discourse', action='store_true', help='use discourse tokens as extra input')
     parser.add_argument('--top_kw', type=int, default=20, help='number of keywords phrases')
     parser.add_argument('--output_path', type=str, default='dataset/full/', help='folder with output texts')
-    parser.add_argument('--use_ner', action='store_true')
+    parser.add_argument('--use_ner', action='store_true', help='Use dataset with NER promt')
 
     args = parser.parse_args()    
     print(args)

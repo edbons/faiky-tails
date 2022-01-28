@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from tqdm import tqdm
-from src.model.data_full import RawFilesDataset, PromtDataset
+from src.model.data_full import PromtDataset
 from src.model.pipeline import copy_data_to_device, init_random_seed
 from typing import List, Tuple, Union
 import warnings
@@ -41,7 +41,6 @@ class StoryGenerator:
 
     def generate_stories(self, data: str="", n_ctx: int=100, batch_size: int=2, max_samples: int=None, gen_len: int=512, **args) -> List[Tuple[str, str, str]]:        
 
-        # dataset = RawFilesDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx, max_samples=max_samples)
         dataset = PromtDataset(data, self.tokenizer, pad_len=2048, n_ctx=n_ctx, max_samples=max_samples)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         self.n_ctx = n_ctx
@@ -157,9 +156,9 @@ if __name__=='__main__':
     parser.add_argument('--gen_len', type=int, default=512, help='max generation length + 1 for end token')
     parser.add_argument('--n_ctx', type=int, default=70, help='keyword tokens length')  
     parser.add_argument('--hf_model', type=str, default="sberbank-ai/rugpt3small_based_on_gpt2", help='name for GPT2 or GPT3 model from Hugginface')
-    parser.add_argument('--n_batch', type=int, default=4)
-    parser.add_argument('--max_samples', type=int, default=None, help='limit dataset')
-    parser.add_argument('--use_ner', action='store_true')  
+    parser.add_argument('--n_batch', type=int, default=4, help='number of batches')
+    parser.add_argument('--max_samples', type=int, default=None, help='limit samples count in dataset')
+    parser.add_argument('--use_ner', action='store_true', help='Use dataset with NER promt')  
     args = parser.parse_args()
     print(args)
     main(args)
