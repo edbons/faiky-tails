@@ -138,3 +138,5 @@ analyse
 src/plotmachines
 work.ipynb
 savedir
+cache_*
+*.onnx
