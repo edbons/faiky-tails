@@ -140,3 +140,4 @@ work.ipynb
 savedir
 cache_*
 *.onnx
+test_*
