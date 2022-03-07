@@ -142,3 +142,5 @@ cache_*
 *.onnx
 test_*
 TODO*
+inference*
+*.zip
