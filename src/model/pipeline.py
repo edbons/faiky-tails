@@ -28,6 +28,8 @@ def copy_data_to_device(data, device):
         return data.to(device)
     elif isinstance(data, (list, tuple)):
         return [copy_data_to_device(elem, device) for elem in data]
+    elif isinstance(data, dict):
+        return {k: copy_data_to_device(elem, device) for k, elem in data.items()}
     raise ValueError('Недопустимый тип данных {}'.format(type(data)))
 
 
@@ -110,12 +112,9 @@ def train_eval_loop(model, train_dataset, val_dataset,
                 if batch_i > max_batches_per_epoch_train:
                     break
                 
-                batch_x, mask, batch_y = batch['sample'], batch['mask'], batch['label']
-                batch_x = copy_data_to_device(batch_x, device)
-                batch_y = copy_data_to_device(batch_y, device)
-                mask = copy_data_to_device(mask, device)
-
-                pred = model(batch_x, attention_mask=mask, labels=batch_y)
+                batch = copy_data_to_device(batch, device)
+                
+                pred = model(**batch)
                 loss, _ = pred[:2]
 
                 model.zero_grad()
@@ -143,13 +142,10 @@ def train_eval_loop(model, train_dataset, val_dataset,
                 for batch_i, batch in enumerate(tqdm(val_dataloader)):
                     if batch_i > max_batches_per_epoch_val:
                         break
+                    
+                    batch = copy_data_to_device(batch, device)
+                    pred = model(**batch)
 
-                    batch_x, mask, batch_y = batch['sample'], batch['mask'], batch['label']
-                    batch_x = copy_data_to_device(batch_x, device)
-                    batch_y = copy_data_to_device(batch_y, device)
-                    mask = copy_data_to_device(mask, device)
-
-                    pred = model(batch_x, attention_mask=mask, labels=batch_y)
                     loss, _ = pred[:2]
 
                     mean_val_loss += float(loss)

@@ -42,7 +42,7 @@ def preprocess_texts(output_path: str, file_names: list, name: str, top_kw: int,
                 max_length=5, 
                 include_repeated_phrases=False)
     if use_ner:
-        nlp = spacy.load('ru_core_news_lg')
+        nlp = spacy.load('ru_core_news_lg')  # TODO: disable unused steps https://spacy.io/usage/processing-pipelines
     
     output_file = os.path.join(output_path, name)
     fout = open(output_file, 'a', encoding='utf-8')

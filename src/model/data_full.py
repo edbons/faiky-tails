@@ -73,9 +73,9 @@ class PromtDataset(Dataset):
         label = torch.LongTensor(label)
 
         return {
-            'sample': sample, 
-            'mask': mask, 
-            'label': label
+            'input_ids': sample, 
+            'attention_mask': mask, 
+            'labels': label
         }
 
 if __name__ == "__main__":

@@ -58,7 +58,7 @@ class StoryGenerator:
     def __generate_batch(self, batch: dict, gen_len: int=512)-> Tuple[str, str, str]:
         septok = self.tokenizer.convert_tokens_to_ids('[SEP]')
         endtok = self.tokenizer.eos_token_id
-        input_ids, mask = batch['sample'], batch['mask'] 
+        input_ids, mask = batch['input_ids'], batch['attention_mask'] 
         
         context = input_ids[:, :self.n_ctx]
         ctx_mask = mask[:, :self.n_ctx]       
