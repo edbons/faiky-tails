@@ -5,14 +5,9 @@ from transformers import GPT2Tokenizer
 import onnxruntime
 from utils import test_generation
 
+tokenizer = GPT2Tokenizer.from_pretrained('./tokenizer/', add_prefix_space=True)
 
-tokenizer = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2", add_prefix_space=True)
-tokenizer.add_special_tokens({'bos_token': '<s>',                                     
-                                        'eos_token': '</s>',
-                                        'additional_special_tokens': ['[SEP]', '_kw_', '_endkw_']
-                                    })
-
-session = onnxruntime.InferenceSession("gpt3_custom.onnx")
+session = onnxruntime.InferenceSession("./model/gpt3_custom.onnx")
 
 model_params = {
     "num_attention_heads": 12,

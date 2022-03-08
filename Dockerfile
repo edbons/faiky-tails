@@ -1,14 +1,14 @@
 FROM python:3.8
 
-COPY ./requirements_inference.txt /webapp/requirements.txt
-
 WORKDIR /webapp
+
+COPY webapp/requirements.txt ./
 
 RUN pip install -r requirements.txt
 
-COPY webapp/* /webapp
-
-COPY webapp/gpt3_custom.onnx /webapp
+COPY webapp/*.py ./
+COPY webapp/model/ model/
+COPY webapp/tokenizer/ tokenizer/
 
 ENTRYPOINT [ "uvicorn" ]
 

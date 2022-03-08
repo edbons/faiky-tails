@@ -1,9 +1,9 @@
 import torch
 import numpy
-from transformers import GPT2Tokenizer, GPT2Model
+from transformers import GPT2Tokenizer
 
 
-def get_example_inputs(prompt_text: str="", tokenizer: GPT2Tokenizer=None, model: GPT2Model=None, num_attention_heads: int=1, hidden_size: int=1, num_layer: int=1, device='cpu'):
+def get_example_inputs(prompt_text: str="", tokenizer: GPT2Tokenizer=None, num_attention_heads: int=1, hidden_size: int=1, num_layer: int=1, device='cpu'):
     context = tokenizer.encode(prompt_text)
 
     septok = tokenizer.convert_tokens_to_ids('[SEP]')
@@ -77,10 +77,10 @@ def update(output, step, batch_size, beam_size, context_length, device, **kwargs
     
     return inputs, ort_inputs, past
 
-def test_generation(tokenizer, input_text: list, ort_session = None, num_tokens_to_produce: int=30, model: GPT2Model=None, device: str="cpu", **kwargs):
+def test_generation(tokenizer, input_text: list, ort_session = None, num_tokens_to_produce: int=30, device: str="cpu", **kwargs):
     input_text = " _kw_ ".join(input_text)
 
-    input_ids, past = get_example_inputs(input_text, tokenizer=tokenizer, model=model, device=device, **kwargs)
+    input_ids, past = get_example_inputs(input_text, tokenizer=tokenizer, device=device, **kwargs)
 
     beam_select_idx = torch.zeros([1, input_ids.shape[0]]).long()
     input_log_probs = torch.zeros([input_ids.shape[0], 1])
