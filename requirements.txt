@@ -8,3 +8,4 @@ sklearn
 spacy
 datasets
 bert_score
+streamlit

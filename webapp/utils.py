@@ -77,7 +77,7 @@ def update(output, step, batch_size, beam_size, context_length, device, **kwargs
     
     return inputs, ort_inputs, past
 
-def test_generation(tokenizer, input_text: list, ort_session = None, num_tokens_to_produce: int=30, device: str="cpu", **kwargs):
+def generate(tokenizer, input_text: list, ort_session = None, num_tokens_to_produce: int=30, device: str="cpu", **kwargs) -> str:
     input_text = " _kw_ ".join(input_text)
 
     input_ids, past = get_example_inputs(input_text, tokenizer=tokenizer, device=device, **kwargs)
@@ -105,7 +105,7 @@ def test_generation(tokenizer, input_text: list, ort_session = None, num_tokens_
         ort_inputs[f'past_{i}'] = numpy.ascontiguousarray(past_i.cpu().numpy())
     
     batch_size = input_ids.size(0)
-    beam_size = 4
+    beam_size = 4  # TODO: change to input param
     context_length = input_ids.size(-1)
 
     for step in range(num_tokens_to_produce):
@@ -114,8 +114,11 @@ def test_generation(tokenizer, input_text: list, ort_session = None, num_tokens_
 
         if not inputs['input_unfinished_sents'].any():
             break
+    
+    result = tokenizer.decode(inputs['input_ids'][0], skip_special_tokens=False, clean_up_tokenization_spaces=False)
 
-    return inputs
+    return result
+
 
 if __name__ == '__main__':
     pass

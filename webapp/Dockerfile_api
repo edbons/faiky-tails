@@ -1,0 +1,17 @@
+FROM python:3.8
+
+WORKDIR /webapp
+
+COPY ./api/requirements.txt ./
+
+RUN pip install -r requirements.txt
+
+COPY ./api/main.py ./
+COPY ./utils.py ./
+
+RUN wget https://github.com/edbons/faiky-tails/releases/download/v0.1.0/onnx_model_tokenizer.zip
+RUN unzip -o -q onnx_model_tokenizer.zip
+
+ENTRYPOINT [ "uvicorn" ]
+
+CMD [ "--host", "0.0.0.0", "main:app" ]

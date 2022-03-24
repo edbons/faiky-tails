@@ -1,9 +1,19 @@
-version: '3.1'
+version: '3.9'
 
 services:
-  webapp:
-    image: faikytails:latest
+  api:
+    image: faikytail/api
+    build:
+      context: ./webapp
+      dockerfile: ./Dockerfile_api
     ports:
         - 8000:8000
 
+  app:
+    image: faikytail/app
+    build:
+      context: ./webapp
+      dockerfile: ./Dockerfile_app
+    ports:
+        - 8501:8501
   
