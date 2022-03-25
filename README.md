@@ -19,7 +19,7 @@
 docker compose -f docker-compose.yaml up -d --build
 ```
 
-2. Подключиться к REST сервису по адресу: http://localhost:8000/docs
+2. Подключиться к REST API сервису по адресу: http://localhost:8000/docs
 3. Подключиться к приложению streamlit по адресу: http://localhost:8501
 
 ## TO DO

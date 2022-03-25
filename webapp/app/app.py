@@ -1,18 +1,8 @@
 import time
-import onnxruntime
-from transformers import GPT2Tokenizer
-from utils import generate
 import streamlit as st
+import requests
 
-tokenizer = GPT2Tokenizer.from_pretrained('./tokenizer/', add_prefix_space=True)
-
-session = onnxruntime.InferenceSession("./model/gpt3_custom.onnx")
-
-model_params = {
-    "num_attention_heads": 12,
-    "hidden_size": 768,
-    "num_layer": 12
-}
+API_URL = 'http://faikytail-api:8000/story'
 
 st.title("Генератор русских народных сказок")
 
@@ -22,9 +12,18 @@ body = st.text_input(label='Ключевые фразы', placeholder='Введ�
 
 if body != '':    
     curr_time = time.time()
-    promt = body.split(',')
-    st.text(f'Затравка: {" _kw_ ".join(promt)}')
-    text = generate(input_text=body, tokenizer=tokenizer, ort_session=session, num_tokens_to_produce=gen_len, **model_params)
-    text = text.split('[SEP]')[-1].strip()
+    
+    json = {
+            "phrase": body,
+            "max_len": gen_len
+            }
+    
+    response = requests.post(url=API_URL, json=json)
+
+    if response.status_code in [200, 201]:
+        text = response.json()['text']
+    else:
+        text = f'Sorry, something goes wrong... Request response {response.status_code} {response.reason}'
+    
     st.text_area(label='Результат', value=text, disabled=True, height=200)
     st.text(f'Длительность: {str(round(time.time() - curr_time,2))} c')

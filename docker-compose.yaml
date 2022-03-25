@@ -6,6 +6,7 @@ services:
     build:
       context: ./webapp
       dockerfile: ./Dockerfile_api
+    container_name: faikytail-api
     ports:
         - 8000:8000
 
@@ -14,6 +15,9 @@ services:
     build:
       context: ./webapp
       dockerfile: ./Dockerfile_app
+    container_name: faikytail-app
+    depends_on:
+      - api
     ports:
         - 8501:8501
   
