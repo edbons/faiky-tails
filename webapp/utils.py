@@ -17,15 +17,15 @@ def get_example_inputs(prompt_text: str="", tokenizer: GPT2Tokenizer=None, num_a
     #Empty Past State for generating first word
     empty_past = []
     batch_size = input_ids.size(0)
-    # sequence_length = input_ids.size(1)
+
     past_shape = [2, batch_size, num_attention_heads, 0, hidden_size // num_attention_heads]
-    for i in range(num_layer):
+    for _ in range(num_layer):
         empty_past.append(torch.empty(past_shape).type(torch.float32).to(device))
        
     return input_ids, empty_past
 
 
-def update(output, step, batch_size, beam_size, context_length, device, **kwargs):
+def update(output, batch_size, beam_size, device, **kwargs):
     """
     Update the inputs for next inference.
     """
@@ -77,7 +77,8 @@ def update(output, step, batch_size, beam_size, context_length, device, **kwargs
     
     return inputs, ort_inputs, past
 
-def generate(tokenizer, input_text: list, ort_session = None, num_tokens_to_produce: int=30, device: str="cpu", **kwargs) -> str:
+
+def generate(tokenizer, input_text: list, ort_session = None, num_tokens_to_produce: int=30, device: str="cpu", **kwargs) -> list:
     input_text = " _kw_ ".join(input_text)
 
     input_ids, past = get_example_inputs(input_text, tokenizer=tokenizer, device=device, **kwargs)
@@ -86,13 +87,7 @@ def generate(tokenizer, input_text: list, ort_session = None, num_tokens_to_prod
     input_log_probs = torch.zeros([input_ids.shape[0], 1])
     input_unfinished_sents = torch.ones([input_ids.shape[0], 1], dtype=torch.bool)
     prev_step_scores = torch.zeros([input_ids.shape[0], 1])
-    inputs = {
-        'input_ids': input_ids,
-        'beam_select_idx': beam_select_idx,
-        'input_log_probs': input_log_probs,
-        'input_unfinished_sents': input_unfinished_sents,
-        'prev_step_scores': prev_step_scores
-    }
+
     ort_inputs = {
         'input_ids': numpy.ascontiguousarray(input_ids.cpu().numpy()),       
         'beam_select_idx': numpy.ascontiguousarray(beam_select_idx.cpu().numpy()),
@@ -105,20 +100,17 @@ def generate(tokenizer, input_text: list, ort_session = None, num_tokens_to_prod
         ort_inputs[f'past_{i}'] = numpy.ascontiguousarray(past_i.cpu().numpy())
     
     batch_size = input_ids.size(0)
-    beam_size = 4  # TODO: change to input param
-    context_length = input_ids.size(-1)
+    beam_size = 4
 
-    for step in range(num_tokens_to_produce):
-        outputs = ort_session.run(None, ort_inputs) 
-        inputs, ort_inputs, past = update(outputs, step, batch_size, beam_size, context_length, device, **kwargs)
+    for _ in range(num_tokens_to_produce):
+        outputs = ort_session.run(None, ort_inputs)
+        inputs, ort_inputs, past = update(outputs, batch_size, beam_size, device, **kwargs)
 
         if not inputs['input_unfinished_sents'].any():
             break
     
-    result = tokenizer.decode(inputs['input_ids'][0], skip_special_tokens=False, clean_up_tokenization_spaces=False)
-
+    result = [tokenizer.decode(inputs['input_ids'][i], skip_special_tokens=False, clean_up_tokenization_spaces=False) for i in range(inputs['input_ids'].shape[0])]
     return result
-
 
 if __name__ == '__main__':
     pass
