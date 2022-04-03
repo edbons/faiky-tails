@@ -162,7 +162,7 @@ def export_and_validate_model(model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, 
             verbose=False
         )
 
-        logger.info("Model exported to {}".format(onnx_file_path))
+        
 
         options = onnxruntime.SessionOptions()
 
@@ -182,9 +182,11 @@ def export_and_validate_model(model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, 
             ort_inputs
         )
 
-        print("Pytorch output:", summary_ids.cpu().numpy())
-        print("Onnx output:", ort_out[0])
 
+        logger.info(f"Pytorch output: {summary_ids.cpu().numpy()}")
+        logger.info(f"Onnx output: {ort_out[0]}")
+
+        logger.info(f"Model exported to {onnx_file_path}, size {round(os.path.getsize(onnx_file_path) / 1024 / 1024, 2)} mb")
         logger.info("Success.")
 
 
