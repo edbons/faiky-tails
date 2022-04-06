@@ -9,9 +9,7 @@
 
 Веса, результаты обучения моделей и сгенерированные истории можно скачать с *[гугл диск](https://drive.google.com/file/d/1f1MU0bgIo1X_78vpuc-DqKH8joHRcbgT/view?usp=sharing)*.
 
-## Порядок запуска
-
-Для демонстрации модели можно:
+## Запуск в Docker
 
 1. Запустить контейнеры и сборку локальных образов Docker:
 
@@ -21,6 +19,22 @@ docker compose -f docker-compose.yaml up -d --build
 
 2. Подключиться к REST API сервису по адресу: http://localhost:8000/docs
 3. Подключиться к приложению streamlit по адресу: http://localhost:8501
+
+## Запуск в k8s
+
+1. Запустить сборку локальных образов Docker:
+```
+docker build -f webapp/Dockerfile_app --tag faikytail/app --no-cache webapp
+docker build -f webapp/Dockerfile_api --tag faikytail/api --no-cache webapp
+```
+
+2. Запустить контейнеры k8s:
+
+```
+kubectl apply -f webapp.yaml
+```
+
+3. Подключиться к приложению streamlit по адресу: http://localhost:8080
 
 ## TO DO
 

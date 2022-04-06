@@ -35,5 +35,5 @@ def root():
 def generate_story(body: Body):
     promt = body.phrase.split(',')
     text = generate(input_text=promt, tokenizer=tokenizer, ort_session=session, num_tokens_to_produce=body.max_len, **model_params)
-    text = text.split('[SEP]')[-1].strip()
+    text = text[0].split('[SEP]')[-1].strip()  # return only first hypothesis
     return {'text': text}

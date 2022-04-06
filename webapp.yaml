@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: tails
+    tier: frontend
+spec:
+  type: LoadBalancer
+  ports:
+    - name: 8501-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8501
+  selector:
+    app: tails
+    tier: frontend
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+        app: tails
+        tier: frontend
+  template:
+    metadata:
+      labels:
+        app: tails
+        tier: frontend
+    spec:
+      containers:
+      - name: app
+        image: faikytail/app
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        ports:
+        - containerPort: 8501
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: faikytail-api
+  labels:    
+    tier: backend
+spec:
+  ports:
+    - port: 8000      
+  selector:
+    tier: backend
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: backend
+  template:
+    metadata:
+      labels:
+        tier: backend
+    spec:
+      containers:
+      - name: faikytail-api
+        image: faikytail/api
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        ports:
+        - containerPort: 8000
